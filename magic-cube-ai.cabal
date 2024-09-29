@@ -25,11 +25,8 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
-  other-modules:
-      Paths_magic_cube_ai
-  autogen-modules:
-      Paths_magic_cube_ai
+      Cube
+      Line
   hs-source-dirs:
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
@@ -41,10 +38,6 @@ library
 
 executable magic-cube-ai-exe
   main-is: Main.hs
-  other-modules:
-      Paths_magic_cube_ai
-  autogen-modules:
-      Paths_magic_cube_ai
   hs-source-dirs:
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
