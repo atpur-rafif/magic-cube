@@ -3,7 +3,7 @@
 module Main (main) where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import CubeState (CubeT, MonadCube (setValue, isMagicCube), runCubeT, stateFromCube, MatrixCube)
+import CubeState (CubeT, MonadCube (getValue, setValue, getPoint), runCubeT, stateFromCube, MatrixCube)
 import Line (Point (..))
 
 main :: IO ()
@@ -13,10 +13,13 @@ main = do
 
 testState :: CubeT IO ()
 testState = do
-  setValue (Point (0, 0, 0)) 0
-  b <- isMagicCube
-  setValue (Point (0, 0, 0)) 25
+  v <- getValue (Point (2,2,2))
+  setValue (Point (2, 2, 2)) 25
+  b <- getPoint
   liftIO . print $ b
+  setValue (Point (2, 2, 2)) v
+  c <- getPoint
+  liftIO . print $ c
   return ()
 
 testCube :: MatrixCube
