@@ -1,7 +1,8 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 module Line (generateLines, lineToPoints, Point (..), Line (..)) where
+import Data.Ix (Ix)
 
-newtype Point = Point (Int, Int, Int) deriving (Eq, Ord, Show)
+newtype Point = Point (Int, Int, Int) deriving (Eq, Ord, Show, Ix)
 
 newtype Line = Line (Point, Point) deriving (Eq, Ord, Show)
 

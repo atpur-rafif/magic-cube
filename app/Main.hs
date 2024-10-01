@@ -1,11 +1,23 @@
+{-# OPTIONS_GHC -Wno-unused-do-bind #-}
+
 module Main (main) where
 
-import Cube (MatrixCube, runLine)
-import Line (generateLines)
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import CubeState (CubeT, MonadCube (setValue, isMagicCube), runCubeT, stateFromCube, MatrixCube)
+import Line (Point (..))
 
 main :: IO ()
 main = do
-  print $ all (315 ==) $ runLine testCube <$> generateLines 5
+  runCubeT testState (stateFromCube 5 testCube)
+  return ()
+
+testState :: CubeT IO ()
+testState = do
+  setValue (Point (0, 0, 0)) 0
+  b <- isMagicCube
+  setValue (Point (0, 0, 0)) 25
+  liftIO . print $ b
+  return ()
 
 testCube :: MatrixCube
 testCube =
