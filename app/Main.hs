@@ -2,29 +2,16 @@
 
 module Main (main) where
 
-import Control.Monad.IO.Class (MonadIO (liftIO))
-import CubeState (CubeT, MonadCube (getValue, setValue, getPoint), runCubeT, stateFromCube, MatrixCube)
-import Line (Point (..))
+import CubeState(MatrixCube, CubeState, stateFromCube)
 
 main :: IO ()
 main = do
-  runCubeT testState (stateFromCube 5 testCube)
-  return ()
-
-testState :: CubeT IO ()
-testState = do
-  v <- getValue (Point (2,2,2))
-  setValue (Point (2, 2, 2)) 25
-  b <- getPoint
-  liftIO . print $ b
-  setValue (Point (2, 2, 2)) v
-  c <- getPoint
-  liftIO . print $ c
+  print testCubeState
   return ()
 
 testCube :: MatrixCube
 testCube =
-  [ [ [25, 16, 80, 104, 90],
+  [ [ [16, 25, 80, 104, 90],
       [115, 98, 4, 1, 97],
       [42, 111, 85, 2, 75],
       [66, 72, 27, 102, 48],
@@ -55,3 +42,6 @@ testCube =
       [36, 110, 46, 22, 101]
     ]
   ]
+
+testCubeState :: CubeState
+testCubeState = stateFromCube 5 testCube
