@@ -2,16 +2,36 @@
 
 module Main (main) where
 
-import CubeState(MatrixCube, CubeState, stateFromCube)
+import CubeState (CubeAI (setValue), CubeState, MatrixCube, StateAI (generateSuccessor, getPoint), stateFromCube)
+import Line (Point (Point))
 
 main :: IO ()
 main = do
-  print testCubeState
+  let n =
+        foldr
+          (\(p, v) a -> setValue a p v)
+          testCubeState
+          [ (Point (0, 0, 0), 16),
+            (Point (0, 0, 1), 80),
+            (Point (0, 0, 2), 25),
+            (Point (0, 0, 3), 90),
+            (Point (0, 0, 4), 104)
+          ]
+  print $ getPoint n
+  print $ getPoint $ hillClimb n
   return ()
+
+hillClimb :: CubeState -> CubeState
+hillClimb s = if getPoint r > getPoint s then hillClimb r else s
+  where
+    ss = generateSuccessor s
+    r = foldl1 f ss
+      where
+        f n p = if getPoint n > getPoint p then n else p
 
 testCube :: MatrixCube
 testCube =
-  [ [ [16, 25, 80, 104, 90],
+  [ [ [25, 16, 80, 104, 90],
       [115, 98, 4, 1, 97],
       [42, 111, 85, 2, 75],
       [66, 72, 27, 102, 48],

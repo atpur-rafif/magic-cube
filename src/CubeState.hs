@@ -55,7 +55,7 @@ stateFromCube s c =
       (z, l) <- zip [0 ..] c
       (y, l') <- zip [0 ..] l
       (x, e) <- zip [0 ..] l'
-      return (Point (x, y, z), e)
+      return (Point (z, y, x), e)
 
 class StateAI s where
   getPoint :: s -> Int
@@ -78,7 +78,7 @@ instance StateAI CubeState where
                 v1 = getValue s p1
                 v2 = getValue s p2
                 f (p, v) a = setValue a p v
-              in return $ foldr f s [(p1, v1), (p2, v2)]
+              in return $ foldr f s [(p1, v2), (p2, v1)]
 
 
 instance CubeAI CubeState where
