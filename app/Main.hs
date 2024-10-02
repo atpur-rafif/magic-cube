@@ -1,44 +1,40 @@
+{-# LANGUAGE MultiWayIf #-}
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
 
 module Main (main) where
 
-import CubeState (CubeAI (isMagicCube, setValue), CubeState, MatrixCube, StateAI (generateNeighbor, generateRandomState, getPoint), stateFromCube, GeneticAlgorithmAI (combineGenes))
-import Line (Point (Point))
-import System.Random (randomIO, randomRIO)
+import Control.Monad (forM, forM_)
 import qualified Control.Monad.Random as R
-import Control.Monad (forM)
+import CubeState (CubeAI (isMagicCube), CubeState, GeneticAlgorithmAI (combineGenes), MatrixCube, StateAI (generateNeighbor, generateRandomState, getPoint), stateFromCube)
+import System.CPUTime (getCPUTime)
+import System.Random (randomIO, randomRIO)
+import Text.Printf (printf)
+
+benchmark :: IO a -> IO (Integer, a)
+benchmark a = do
+  s <- getCPUTime
+  r <- a
+  e <- getCPUTime
+  return (e - s, r)
 
 main :: IO ()
 main = do
-  s <-  shuffleState 100 solutionCubeState
+  s <- shuffleState 20 solutionCubeState
   putStr "Original point: "
   print $ getPoint s
 
-  hc <- hillClimb s
-  putStr "Hill Climbing: "
-  print $ getPoint hc
-
-  hcws <- hillClimbWithSideway 100 s
-  putStr "Hill Climbing with Sideways Move: "
-  print $ getPoint hcws
-
-  hcs <- hillClimbStochastic 1000 s
-  putStr "Stochastic Hill Climbing: "
-  print $ getPoint hcs
-
-  hcrr <- hillClimbRandomRestart 5 s
-  putStr "Random Restart Hill Climbing: "
-  print $ getPoint hcrr
-
-  sa <- simulatedAnnealing (exponentialBackoff 1e3) s
-  putStr "Simulated Annealing: "
-  print $ getPoint sa
-
-  ga <- geneticAlgorithm 10 (replicate 10 s)
-  putStr "Genetic Algorithm: "
-  print $ getPoint ga
-
-  return ()
+  let m =
+        [ ("Hill Climbing", hillClimb),
+          ("Hill Climbing with Sideways Move", hillClimbWithSideway 100),
+          ("Sthocastic Hill Climbing", hillClimbStochastic 1000),
+          ("Hill Climbing Random Restart", hillClimbRandomRestart 5),
+          ("Simulated Annealing", simulatedAnnealing (exponentialBackoff 1.01 1e10)),
+          ("Genetic Algorithm", geneticAlgorithm 10 . replicate 10)
+        ]
+  forM_ m $ \(n, a) -> do
+    (t, r) <- benchmark $ a s
+    printf "%s: %d (%dms)\n" n (getPoint r) (t `div` 1000000000)
+    return ()
 
 shuffleState :: (StateAI s) => Int -> s -> IO s
 shuffleState 0 s = return s
@@ -77,22 +73,22 @@ hillClimbStochastic i s = do
 hillClimbRandomRestart :: Int -> CubeState -> IO CubeState
 hillClimbRandomRestart 0 s = return s
 hillClimbRandomRestart i s = do
-  ns <- shuffleState 20 s
+  ns <- shuffleState 25 s
   hc <- hillClimb ns
-  putStr "Random restart: "
-  print $ getPoint hc
   if isMagicCube hc
     then return hc
     else do
-      n <- hillClimbRandomRestart (i -1) s
+      n <- hillClimbRandomRestart (i - 1) s
       return $ if getPoint n > getPoint hc then n else hc
 
 newtype TemperatureSA = TemperatureSA
   { runTemperatureSA :: (Double, TemperatureSA)
   }
 
-exponentialBackoff :: Double -> TemperatureSA
-exponentialBackoff v = TemperatureSA (v, exponentialBackoff (v / 2))
+exponentialBackoff :: Double -> Double -> TemperatureSA
+exponentialBackoff d s
+  | s < 1e-5 = TemperatureSA (s, exponentialBackoff d 0)
+  | otherwise = TemperatureSA (s, exponentialBackoff d (s / d))
 
 simulatedAnnealing :: TemperatureSA -> CubeState -> IO CubeState
 simulatedAnnealing t s = do
@@ -100,30 +96,34 @@ simulatedAnnealing t s = do
   let (ct, nt) = runTemperatureSA t
       d = getPoint ns - getPoint s
       nsa = simulatedAnnealing nt ns
-  if d > 0
-    then nsa
-    else do
-      let p = exp $ (fromIntegral d :: Double) / ct
-      r <- randomRIO (0, 1) :: IO Double
-      if r < p then nsa else return s
+  if
+    | ct == 0 -> return s
+    | d > 0 -> nsa
+    | otherwise -> do
+        let p = exp $ (fromIntegral d :: Double) / ct
+        r <- randomRIO (0, 1) :: IO Double
+        if r < p then nsa else return s
 
 geneticAlgorithm :: Int -> [CubeState] -> IO CubeState
 geneticAlgorithm 0 ss = return $ foldr1 f ss
-  where f c a = if getPoint c > getPoint a then c else a
+  where
+    f c a = if getPoint c > getPoint a then c else a
 geneticAlgorithm i ss = do
   let ssw = if all f l then fe <$> l else l
-        where f (_, v) = v == 0 
-              l = ft <$> ss
-              ft s = (s, toRational $ getPoint s)
-              fe (s, _) = (s, 1)
+        where
+          f (_, v) = v == 0
+          l = ft <$> ss
+          ft s = (s, toRational $ getPoint s)
+          fe (s, _) = (s, 1)
       rn = R.fromList ssw :: IO CubeState
   nss <- forM ss $ \_ -> do
     a <- rn
     b <- rn
     m <- randomIO :: IO Bool
     c <- combineGenes a b
-    if m then generateRandomState c
-    else return c
+    if m
+      then generateRandomState c
+      else return c
   geneticAlgorithm (i - 1) nss
 
 solutionCube :: MatrixCube
