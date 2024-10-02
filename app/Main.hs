@@ -10,29 +10,46 @@ main :: IO ()
 main = do
   s <- hillClimb shufledState
   print $ getPoint s
+  t <- hillClimbWithSideway 1 shufledState
+  print $ getPoint t
   return ()
 
-pickRandom :: [a] ->  IO a
+pickRandom :: [a] -> IO a
 pickRandom xs = do
   n <- randomIO :: IO Int
   let l = length xs
       i = n `mod` l
   return $ xs !! i
 
+generateNeighbor :: CubeState -> [CubeState]
+generateNeighbor s = foldr f [] $ generateSuccessor s
+  where
+    f n [] = [n]
+    f n ps@(p : _)
+      | np < pp = ps
+      | np > pp = [n]
+      | otherwise = n : ps
+      where
+        np = getPoint n
+        pp = getPoint p
+
 hillClimb :: CubeState -> IO CubeState
 hillClimb s = do
-  let ss = generateSuccessor s
-      nss = foldr f [] ss
-      f n [] = [n]
-      f n ps@(p:_)
-        | np < pp = ps
-        | np > pp = [n]
-        | otherwise = n:ps
-          where np = getPoint n
-                pp = getPoint p
-  ns <- pickRandom nss
-  if getPoint ns > getPoint s then hillClimb ns
-  else return s
+  ns <- pickRandom $ generateNeighbor s
+  if getPoint ns > getPoint s
+    then hillClimb ns
+    else return s
+
+hillClimbWithSideway :: Int -> CubeState -> IO CubeState
+hillClimbWithSideway i s = do
+  let f 0 cs = return cs
+      f ci cs = do
+        ns <- pickRandom $ generateNeighbor cs
+        case getPoint ns `compare` getPoint cs of
+          LT -> return s
+          EQ -> f (ci - 1) ns
+          GT -> hillClimbWithSideway i ns
+  f i s
 
 shufledState :: CubeState
 shufledState =
