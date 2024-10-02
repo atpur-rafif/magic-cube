@@ -1,8 +1,8 @@
 name:                magic-cube-ai
 version:             0.1.0.0
-github:              "githubuser/magic-cube-ai"
+github:              "githubuser/magic-cube"
 license:             BSD-3-Clause
-author:              "Author name here"
+author:              "Afif, Indra"
 maintainer:          "example@example.com"
 copyright:           "2024 Author name here"
 spec-version:        0.36.0
