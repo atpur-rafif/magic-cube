@@ -2,21 +2,34 @@
 
 module Main (main) where
 
-import CubeState (CubeAI (setValue, isMagicCube), CubeState, MatrixCube, StateAI (generateNeighbor, getPoint, generateRandomState), stateFromCube)
+import CubeState (CubeAI (isMagicCube, setValue), CubeState, MatrixCube, StateAI (generateNeighbor, generateRandomState, getPoint), stateFromCube, GeneticAlgorithmAI (combineGenes))
 import Line (Point (Point))
 import System.Random (randomIO, randomRIO)
+import qualified Control.Monad.Random as R
+import Control.Monad (forM)
 
 main :: IO ()
 main = do
   print $ getPoint shufledState
+
   hc <- hillClimb shufledState
   print $ getPoint hc
+
   hcws <- hillClimbWithSideway 1 shufledState
   print $ getPoint hcws
-  hcs <- hillClimbStochastic 1000000 shufledState
+
+  hcs <- hillClimbStochastic 1000 shufledState
   print $ getPoint hcs
+
+  hcrr <- hillClimbRandomRestart shufledState
+  print $ getPoint hcrr
+
   sa <- simulatedAnnealing (exponentialBackoff 1e3) shufledState
   print $ getPoint sa
+
+  ga <- geneticAlgorithm 10 (replicate 10 shufledState)
+  print $ getPoint ga
+
   return ()
 
 pickRandom :: [a] -> IO a
@@ -50,8 +63,9 @@ hillClimbStochastic i s = do
 hillClimbRandomRestart :: CubeState -> IO CubeState
 hillClimbRandomRestart s = do
   hc <- hillClimb s
-  if isMagicCube hc then return hc
-  else hillClimbRandomRestart s
+  if isMagicCube hc
+    then return hc
+    else hillClimbRandomRestart s
 
 newtype TemperatureSA = TemperatureSA
   { runTemperatureSA :: (Double, TemperatureSA)
@@ -72,6 +86,22 @@ simulatedAnnealing t s = do
       let p = exp $ (fromIntegral d :: Double) / ct
       r <- randomRIO (0, 1) :: IO Double
       if r < p then nsa else return s
+
+geneticAlgorithm :: Int -> [CubeState] -> IO CubeState
+geneticAlgorithm 0 ss = return $ foldr1 f ss
+  where f c a = if getPoint c > getPoint a then c else a
+geneticAlgorithm i ss = do
+  let ssw = f <$> ss
+        where f s = (s, toRational $ getPoint s)
+      rn = R.fromList ssw :: IO CubeState
+  nss <- forM ss $ \_ -> do
+    a <- rn
+    b <- rn
+    m <- randomIO :: IO Bool
+    c <- combineGenes a b
+    if m then generateRandomState c
+    else return c
+  geneticAlgorithm (i - 1) nss
 
 shufledState :: CubeState
 shufledState =

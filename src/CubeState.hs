@@ -1,12 +1,15 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module CubeState (stateFromCube, MatrixCube, CubeState, StateAI (..), CubeAI (..)) where
+module CubeState (stateFromCube, MatrixCube, CubeState, StateAI (..), CubeAI (..), GeneticAlgorithmAI(..)) where
 
-import Data.Map (Map, fromList, fromListWith, (!))
-import GHC.Arr (Array, Ix (range), array, (!), (//))
-import Line (Line (..), Point (..), generateLines, lineToPoints)
-import System.Random (randomRIO)
+import Control.Monad (foldM)
 import Control.Monad.IO.Class (MonadIO)
+import Data.Map (Map, fromList, fromListWith, (!))
+import qualified Data.Set as S
+import GHC.Arr (Array, Ix (range), array, assocs, (!), (//), elems)
+import Line (Line (..), Point (..), generateLines, lineToPoints)
+import System.Random (randomIO, randomRIO)
+import Data.List (foldl')
 
 type MatrixCube = [[[Int]]]
 
@@ -70,7 +73,7 @@ class CubeAI s where
   setValue :: s -> Point -> Int -> s
   isMagicCube :: s -> Bool
 
-switchValue :: (CubeAI s) =>  s -> Point -> Point -> s
+switchValue :: (CubeAI s) => s -> Point -> Point -> s
 switchValue s p1 p2 =
   let v1 = getValue s p1
       v2 = getValue s p2
@@ -127,3 +130,26 @@ instance CubeAI CubeState where
             currentPoint = currentPoint s + countPoint nrlm - countPoint rlm
           }
   isMagicCube s = targetPoint s == currentPoint s
+
+class GeneticAlgorithmAI s where
+  combineGenes :: s -> s -> IO s
+
+instance GeneticAlgorithmAI CubeState where
+  combineGenes s1 s2 = do
+    let z = zipWith f' (f s1) (f s2)
+          where
+            f = assocs . cube
+            f' (p1, v1) (p2, _)
+              | p1 /= p2 = error "Mismatch state"
+              | otherwise = (p1, v1)
+        fr f a b c = f c b a
+    (p2, v2) <- fr foldM z ([], []) $ \a@(p2, v2) (p, v) -> do
+      b <- randomIO :: IO Bool
+      if b then return a
+      else return (p:p2, v:v2)
+    let hv2 = S.fromList v2
+        s2v2 = foldl' f [] $ elems $ cube s2
+          where f a v = if v `S.member` hv2 then v:a else a
+        t2 = p2 `zip` s2v2
+        fc (p, v) a = setValue a p v
+    return $ foldr fc s1 t2

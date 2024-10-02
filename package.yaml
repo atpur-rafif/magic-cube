@@ -26,6 +26,7 @@ dependencies:
 - random
 - containers
 - mtl
+- MonadRandom
 
 ghc-options:
 - -Wall
