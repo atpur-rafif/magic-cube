@@ -1,10 +1,12 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Line (generateLines, lineToPoints, Point (..), Line (..)) where
 import Data.Ix (Ix)
+import System.Random (Random)
 
-newtype Point = Point (Int, Int, Int) deriving (Eq, Ord, Show, Ix)
+newtype Point = Point (Int, Int, Int) deriving (Eq, Ord, Show, Ix, Random)
 
-newtype Line = Line (Point, Point) deriving (Eq, Ord, Show)
+newtype Line = Line (Point, Point) deriving (Eq, Ord, Show, Random)
 
 createLine :: Point -> Point -> Line
 createLine x y

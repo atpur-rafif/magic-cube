@@ -1,10 +1,12 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module CubeState (stateFromCube, MatrixCube, CubeState, StateAI(..), CubeAI(..)) where
+module CubeState (stateFromCube, MatrixCube, CubeState, StateAI (..), CubeAI (..)) where
 
 import Data.Map (Map, fromList, fromListWith, (!))
 import GHC.Arr (Array, Ix (range), array, (!), (//))
 import Line (Line (..), Point (..), generateLines, lineToPoints)
+import System.Random (randomRIO)
+import Control.Monad.IO.Class (MonadIO)
 
 type MatrixCube = [[[Int]]]
 
@@ -61,25 +63,32 @@ class StateAI s where
   getPoint :: s -> Int
   generateSuccessor :: s -> [s]
   generateNeighbor :: s -> [s]
+  generateRandomState :: (MonadIO m) => s -> m s
 
 class CubeAI s where
   getValue :: s -> Point -> Int
   setValue :: s -> Point -> Int -> s
   isMagicCube :: s -> Bool
 
+switchValue :: (CubeAI s) =>  s -> Point -> Point -> s
+switchValue s p1 p2 =
+  let v1 = getValue s p1
+      v2 = getValue s p2
+      f (p, v) a = setValue a p v
+   in foldr f s [(p1, v2), (p2, v1)]
+
 instance StateAI CubeState where
   getPoint = currentPoint
   generateSuccessor s = r
-    where m = size s - 1
-          r = do
-            p1@(Point (x1, y1, z1)) <- range (Point (0, 0, 0), Point (m, m, m))
-            p2 <- range (Point (x1, y1, z1), Point (m, m, m))
-            if p1 == p2 then []
-            else let 
-                v1 = getValue s p1
-                v2 = getValue s p2
-                f (p, v) a = setValue a p v
-              in return $ foldr f s [(p1, v2), (p2, v1)]
+    where
+      m = size s - 1
+      r = do
+        p1@(Point (x1, y1, z1)) <- range (Point (0, 0, 0), Point (m, m, m))
+        p2 <- range (Point (x1, y1, z1), Point (m, m, m))
+        if p1 == p2
+          then []
+          else return $ switchValue s p1 p2
+
   generateNeighbor s = foldr f [] $ generateSuccessor s
     where
       f n [] = [n]
@@ -88,24 +97,33 @@ instance StateAI CubeState where
         EQ -> n : ps
         GT -> [n]
 
+  generateRandomState s = do
+    let m = size s - 1
+    p1 <- randomRIO (Point (0, 0, 0), Point (m, m, m))
+    p2 <- randomRIO (Point (0, 0, 0), Point (m, m, m))
+    if p1 == p2
+      then generateRandomState s
+      else return $ switchValue s p1 p2
+
 instance CubeAI CubeState where
   getValue s p = cube s GHC.Arr.! p
   setValue s p v' = ns
-    where v = cube s GHC.Arr.! p
-          d = v' - v
-          rlm = f <$> relatedLine s Data.Map.! p
-            where
-              f l = (l, memoizedSum s Data.Map.! l)
-          nrlm = f <$> rlm
-            where
-              f (a, b) = (a, b + d)
-          countPoint = foldr f 0
-            where
-              f (_, b) r = r + if b == targetSum s then 1 else 0
-          ns =
-            s
-              { memoizedSum = fromList nrlm <> memoizedSum s,
-                cube = cube s // [(p, v')],
-                currentPoint = currentPoint s + countPoint nrlm - countPoint rlm
-              }
+    where
+      v = cube s GHC.Arr.! p
+      d = v' - v
+      rlm = f <$> relatedLine s Data.Map.! p
+        where
+          f l = (l, memoizedSum s Data.Map.! l)
+      nrlm = f <$> rlm
+        where
+          f (a, b) = (a, b + d)
+      countPoint = foldr f 0
+        where
+          f (_, b) r = r + if b == targetSum s then 1 else 0
+      ns =
+        s
+          { memoizedSum = fromList nrlm <> memoizedSum s,
+            cube = cube s // [(p, v')],
+            currentPoint = currentPoint s + countPoint nrlm - countPoint rlm
+          }
   isMagicCube s = targetPoint s == currentPoint s
