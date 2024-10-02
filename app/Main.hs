@@ -4,30 +4,47 @@ module Main (main) where
 
 import CubeState (CubeAI (setValue), CubeState, MatrixCube, StateAI (generateSuccessor, getPoint), stateFromCube)
 import Line (Point (Point))
+import System.Random (randomIO)
 
 main :: IO ()
 main = do
-  let n =
-        foldr
-          (\(p, v) a -> setValue a p v)
-          testCubeState
-          [ (Point (0, 0, 0), 16),
-            (Point (0, 0, 1), 80),
-            (Point (0, 0, 2), 25),
-            (Point (0, 0, 3), 90),
-            (Point (0, 0, 4), 104)
-          ]
-  print $ getPoint n
-  print $ getPoint $ hillClimb n
+  s <- hillClimb shufledState
+  print $ getPoint s
   return ()
 
-hillClimb :: CubeState -> CubeState
-hillClimb s = if getPoint r > getPoint s then hillClimb r else s
-  where
-    ss = generateSuccessor s
-    r = foldl1 f ss
-      where
-        f n p = if getPoint n > getPoint p then n else p
+pickRandom :: [a] ->  IO a
+pickRandom xs = do
+  n <- randomIO :: IO Int
+  let l = length xs
+      i = n `mod` l
+  return $ xs !! i
+
+hillClimb :: CubeState -> IO CubeState
+hillClimb s = do
+  let ss = generateSuccessor s
+      nss = foldr f [] ss
+      f n [] = [n]
+      f n ps@(p:_)
+        | np < pp = ps
+        | np > pp = [n]
+        | otherwise = n:ps
+          where np = getPoint n
+                pp = getPoint p
+  ns <- pickRandom nss
+  if getPoint ns > getPoint s then hillClimb ns
+  else return s
+
+shufledState :: CubeState
+shufledState =
+  foldr
+    (\(p, v) a -> setValue a p v)
+    testCubeState
+    [ (Point (0, 0, 0), 16),
+      (Point (0, 0, 1), 80),
+      (Point (0, 0, 2), 25),
+      (Point (0, 0, 3), 90),
+      (Point (0, 0, 4), 104)
+    ]
 
 testCube :: MatrixCube
 testCube =
