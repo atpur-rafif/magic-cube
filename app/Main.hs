@@ -2,7 +2,7 @@
 
 module Main (main) where
 
-import CubeState (CubeAI (setValue), CubeState, MatrixCube, StateAI (generateNeighbor, getPoint, generateRandomState), stateFromCube)
+import CubeState (CubeAI (setValue, isMagicCube), CubeState, MatrixCube, StateAI (generateNeighbor, getPoint, generateRandomState), stateFromCube)
 import Line (Point (Point))
 import System.Random (randomIO, randomRIO)
 
@@ -46,6 +46,12 @@ hillClimbStochastic i s = do
   let f = hillClimbStochastic (i - 1)
   n <- generateRandomState s
   if getPoint n > getPoint s then f n else f s
+
+hillClimbRandomRestart :: CubeState -> IO CubeState
+hillClimbRandomRestart s = do
+  hc <- hillClimb s
+  if isMagicCube hc then return hc
+  else hillClimbRandomRestart s
 
 newtype TemperatureSA = TemperatureSA
   { runTemperatureSA :: (Double, TemperatureSA)
