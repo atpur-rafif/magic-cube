@@ -2,17 +2,19 @@
 
 module Main (main) where
 
-import CubeState (CubeAI (setValue), CubeState, MatrixCube, StateAI (generateNeighbor, getPoint), stateFromCube)
+import CubeState (CubeAI (setValue), CubeState, MatrixCube, StateAI (generateNeighbor, getPoint, generateSuccessor), stateFromCube)
 import Line (Point (Point))
 import System.Random (randomIO, randomRIO)
 
 main :: IO ()
 main = do
   print $ getPoint shufledState
-  hs <- hillClimb shufledState
-  print $ getPoint hs
-  hsws <- hillClimbWithSideway 1 shufledState
-  print $ getPoint hsws
+  hc <- hillClimb shufledState
+  print $ getPoint hc
+  hcws <- hillClimbWithSideway 1 shufledState
+  print $ getPoint hcws
+  hcs <- hillClimbStochastic 1000000 shufledState
+  print $ getPoint hcs
   sa <- simulatedAnnealing (exponentialBackoff 1e10) shufledState
   print $ getPoint sa
   return ()
@@ -37,6 +39,13 @@ hillClimbWithSideway i s = do
           EQ -> f (ci - 1) ns
           GT -> hillClimbWithSideway i ns
   f i s
+
+hillClimbStochastic :: Int -> CubeState -> IO CubeState
+hillClimbStochastic 0 s = return s
+hillClimbStochastic i s = do
+  let f = hillClimbStochastic (i - 1)
+  n <- pickRandom $ generateSuccessor s
+  if getPoint n > getPoint s then f n else f s
 
 newtype TemperatureSA = TemperatureSA
   { runTemperatureSA :: (Double, TemperatureSA)
