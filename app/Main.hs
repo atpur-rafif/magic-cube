@@ -10,27 +10,41 @@ import Control.Monad (forM)
 
 main :: IO ()
 main = do
-  print $ getPoint shufledState
+  s <-  shuffleState 100 solutionCubeState
+  putStr "Original point: "
+  print $ getPoint s
 
-  hc <- hillClimb shufledState
+  hc <- hillClimb s
+  putStr "Hill Climbing: "
   print $ getPoint hc
 
-  hcws <- hillClimbWithSideway 1 shufledState
+  hcws <- hillClimbWithSideway 100 s
+  putStr "Hill Climbing with Sideways Move: "
   print $ getPoint hcws
 
-  hcs <- hillClimbStochastic 1000 shufledState
+  hcs <- hillClimbStochastic 1000 s
+  putStr "Stochastic Hill Climbing: "
   print $ getPoint hcs
 
-  hcrr <- hillClimbRandomRestart shufledState
+  hcrr <- hillClimbRandomRestart 5 s
+  putStr "Random Restart Hill Climbing: "
   print $ getPoint hcrr
 
-  sa <- simulatedAnnealing (exponentialBackoff 1e3) shufledState
+  sa <- simulatedAnnealing (exponentialBackoff 1e3) s
+  putStr "Simulated Annealing: "
   print $ getPoint sa
 
-  ga <- geneticAlgorithm 10 (replicate 10 shufledState)
+  ga <- geneticAlgorithm 10 (replicate 10 s)
+  putStr "Genetic Algorithm: "
   print $ getPoint ga
 
   return ()
+
+shuffleState :: (StateAI s) => Int -> s -> IO s
+shuffleState 0 s = return s
+shuffleState i s = do
+  ns <- generateRandomState s
+  shuffleState (i - 1) ns
 
 pickRandom :: [a] -> IO a
 pickRandom xs = do
@@ -60,12 +74,18 @@ hillClimbStochastic i s = do
   n <- generateRandomState s
   if getPoint n > getPoint s then f n else f s
 
-hillClimbRandomRestart :: CubeState -> IO CubeState
-hillClimbRandomRestart s = do
-  hc <- hillClimb s
+hillClimbRandomRestart :: Int -> CubeState -> IO CubeState
+hillClimbRandomRestart 0 s = return s
+hillClimbRandomRestart i s = do
+  ns <- shuffleState 20 s
+  hc <- hillClimb ns
+  putStr "Random restart: "
+  print $ getPoint hc
   if isMagicCube hc
     then return hc
-    else hillClimbRandomRestart s
+    else do
+      n <- hillClimbRandomRestart (i -1) s
+      return $ if getPoint n > getPoint hc then n else hc
 
 newtype TemperatureSA = TemperatureSA
   { runTemperatureSA :: (Double, TemperatureSA)
@@ -91,8 +111,11 @@ geneticAlgorithm :: Int -> [CubeState] -> IO CubeState
 geneticAlgorithm 0 ss = return $ foldr1 f ss
   where f c a = if getPoint c > getPoint a then c else a
 geneticAlgorithm i ss = do
-  let ssw = f <$> ss
-        where f s = (s, toRational $ getPoint s)
+  let ssw = if all f l then fe <$> l else l
+        where f (_, v) = v == 0 
+              l = ft <$> ss
+              ft s = (s, toRational $ getPoint s)
+              fe (s, _) = (s, 1)
       rn = R.fromList ssw :: IO CubeState
   nss <- forM ss $ \_ -> do
     a <- rn
@@ -103,20 +126,8 @@ geneticAlgorithm i ss = do
     else return c
   geneticAlgorithm (i - 1) nss
 
-shufledState :: CubeState
-shufledState =
-  foldr
-    (\(p, v) a -> setValue a p v)
-    testCubeState
-    [ (Point (0, 0, 0), 16),
-      (Point (0, 0, 1), 80),
-      (Point (0, 0, 2), 25),
-      (Point (0, 0, 3), 90),
-      (Point (0, 0, 4), 104)
-    ]
-
-testCube :: MatrixCube
-testCube =
+solutionCube :: MatrixCube
+solutionCube =
   [ [ [25, 16, 80, 104, 90],
       [115, 98, 4, 1, 97],
       [42, 111, 85, 2, 75],
@@ -149,5 +160,5 @@ testCube =
     ]
   ]
 
-testCubeState :: CubeState
-testCubeState = stateFromCube 5 testCube
+solutionCubeState :: CubeState
+solutionCubeState = stateFromCube 5 solutionCube
