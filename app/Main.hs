@@ -2,17 +2,19 @@
 
 module Main (main) where
 
-import CubeState (CubeAI (setValue), CubeState, MatrixCube, StateAI (getPoint, generateNeighbor), stateFromCube)
+import CubeState (CubeAI (setValue), CubeState, MatrixCube, StateAI (generateNeighbor, getPoint), stateFromCube)
 import Line (Point (Point))
-import System.Random (randomIO)
+import System.Random (randomIO, randomRIO)
 
 main :: IO ()
 main = do
   print $ getPoint shufledState
-  s <- hillClimb shufledState
-  print $ getPoint s
-  t <- hillClimbWithSideway 1 shufledState
-  print $ getPoint t
+  hs <- hillClimb shufledState
+  print $ getPoint hs
+  hsws <- hillClimbWithSideway 1 shufledState
+  print $ getPoint hsws
+  sa <- simulatedAnnealing (exponentialBackoff 1e10) shufledState
+  print $ getPoint sa
   return ()
 
 pickRandom :: [a] -> IO a
@@ -35,6 +37,26 @@ hillClimbWithSideway i s = do
           EQ -> f (ci - 1) ns
           GT -> hillClimbWithSideway i ns
   f i s
+
+newtype TemperatureSA = TemperatureSA
+  { runTemperatureSA :: (Double, TemperatureSA)
+  }
+
+exponentialBackoff :: Double -> TemperatureSA
+exponentialBackoff v = TemperatureSA (v, exponentialBackoff (v / 2))
+
+simulatedAnnealing :: TemperatureSA -> CubeState -> IO CubeState
+simulatedAnnealing t s = do
+  ns <- pickRandom $ generateNeighbor s
+  let (ct, nt) = runTemperatureSA t
+      d = getPoint ns - getPoint s
+      nsa = simulatedAnnealing nt ns
+  if d > 0
+    then nsa
+    else do
+      let p = exp $ (fromIntegral d :: Double) / ct
+      r <- randomRIO (0, 1) :: IO Double
+      if r < p then nsa else return s
 
 shufledState :: CubeState
 shufledState =
