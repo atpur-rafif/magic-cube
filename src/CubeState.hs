@@ -60,6 +60,7 @@ stateFromCube s c =
 class StateAI s where
   getPoint :: s -> Int
   generateSuccessor :: s -> [s]
+  generateNeighbor :: s -> [s]
 
 class CubeAI s where
   getValue :: s -> Point -> Int
@@ -79,7 +80,13 @@ instance StateAI CubeState where
                 v2 = getValue s p2
                 f (p, v) a = setValue a p v
               in return $ foldr f s [(p1, v2), (p2, v1)]
-
+  generateNeighbor s = foldr f [] $ generateSuccessor s
+    where
+      f n [] = [n]
+      f n ps@(p : _) = case getPoint n `compare` getPoint p of
+        LT -> ps
+        EQ -> n : ps
+        GT -> [n]
 
 instance CubeAI CubeState where
   getValue s p = cube s GHC.Arr.! p

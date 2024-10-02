@@ -2,12 +2,13 @@
 
 module Main (main) where
 
-import CubeState (CubeAI (setValue), CubeState, MatrixCube, StateAI (generateSuccessor, getPoint), stateFromCube)
+import CubeState (CubeAI (setValue), CubeState, MatrixCube, StateAI (getPoint, generateNeighbor), stateFromCube)
 import Line (Point (Point))
 import System.Random (randomIO)
 
 main :: IO ()
 main = do
+  print $ getPoint shufledState
   s <- hillClimb shufledState
   print $ getPoint s
   t <- hillClimbWithSideway 1 shufledState
@@ -21,24 +22,8 @@ pickRandom xs = do
       i = n `mod` l
   return $ xs !! i
 
-generateNeighbor :: CubeState -> [CubeState]
-generateNeighbor s = foldr f [] $ generateSuccessor s
-  where
-    f n [] = [n]
-    f n ps@(p : _)
-      | np < pp = ps
-      | np > pp = [n]
-      | otherwise = n : ps
-      where
-        np = getPoint n
-        pp = getPoint p
-
 hillClimb :: CubeState -> IO CubeState
-hillClimb s = do
-  ns <- pickRandom $ generateNeighbor s
-  if getPoint ns > getPoint s
-    then hillClimb ns
-    else return s
+hillClimb = hillClimbWithSideway 1
 
 hillClimbWithSideway :: Int -> CubeState -> IO CubeState
 hillClimbWithSideway i s = do
