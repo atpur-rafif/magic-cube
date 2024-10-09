@@ -27,6 +27,12 @@ dependencies:
 - containers
 - mtl
 - MonadRandom
+- wai
+- warp
+- websockets
+- wai-websockets
+- wai-app-static
+- text
 
 ghc-options:
 - -Wall

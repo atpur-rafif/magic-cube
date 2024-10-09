@@ -37,10 +37,18 @@ library
     , containers
     , mtl
     , random
+    , text
+    , wai
+    , wai-app-static
+    , wai-websockets
+    , warp
+    , websockets
   default-language: Haskell2010
 
 executable magic-cube-ai-exe
   main-is: Main.hs
+  other-modules:
+      Main_old
   hs-source-dirs:
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
@@ -51,4 +59,10 @@ executable magic-cube-ai-exe
     , magic-cube-ai
     , mtl
     , random
+    , text
+    , wai
+    , wai-app-static
+    , wai-websockets
+    , warp
+    , websockets
   default-language: Haskell2010
