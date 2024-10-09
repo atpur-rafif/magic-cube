@@ -2,8 +2,9 @@
 
 module Main (main) where
 
-import Control.Concurrent (threadDelay)
+import Compute
 import Control.Monad (forever)
+import Data.Aeson
 import Data.Text
 import Network.Wai
 import Network.Wai.Application.Static
@@ -14,7 +15,7 @@ import Network.WebSockets
 handle :: Connection -> IO ()
 handle conn = forever $ do
   message <- receiveDataMessage conn
-  threadDelay 1000000
+  print (eitherDecode $ fromDataMessage message :: Either String ComputeRequest)
   sendTextData conn $ ("Hello, " :: Text) <> fromDataMessage message <> "!"
   return ()
 

@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Algorithm
+      Compute
       CubeState
       Line
   hs-source-dirs:
@@ -33,6 +34,7 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       MonadRandom
+    , aeson
     , base >=4.7 && <5
     , containers
     , mtl
@@ -54,6 +56,7 @@ executable magic-cube-ai-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       MonadRandom
+    , aeson
     , base >=4.7 && <5
     , containers
     , magic-cube-ai

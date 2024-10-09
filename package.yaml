@@ -33,6 +33,7 @@ dependencies:
 - wai-websockets
 - wai-app-static
 - text
+- aeson
 
 ghc-options:
 - -Wall
