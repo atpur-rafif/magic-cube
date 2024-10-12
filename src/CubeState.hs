@@ -1,6 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module CubeState (stateFromCube, MatrixCube, CubeState, StateAI (..), CubeAI (..), GeneticAlgorithmAI (..)) where
+module CubeState (stateFromCube, cubeFromState, MatrixCube, CubeState, StateAI (..), CubeAI (..), GeneticAlgorithmAI (..)) where
 
 import Control.Monad (foldM)
 import Control.Monad.IO.Class (MonadIO)
@@ -61,6 +61,12 @@ stateFromCube s c =
       (y, l') <- zip [0 ..] l
       (x, e) <- zip [0 ..] l'
       return (Point (z, y, x), e)
+
+cubeFromState :: CubeState -> MatrixCube
+cubeFromState cs =
+  let m = size cs - 1
+      a = cube cs
+   in [[[a A.! Point (z, y, x) | x <- [0 .. m]] | y <- [0 .. m]] | z <- [0 .. m]]
 
 class StateAI s where
   getPoint :: s -> Int

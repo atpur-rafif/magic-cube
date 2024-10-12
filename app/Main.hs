@@ -3,26 +3,61 @@
 module Main (main) where
 
 import Compute
+import Control.Concurrent (threadDelay)
+import Control.Concurrent.Async (race)
 import Control.Monad (forever)
 import Data.Aeson
+import Data.Aeson.Types (Pair)
+import Data.Bifunctor (Bifunctor (first))
+import Data.String (IsString (fromString))
 import Data.Text
-import Network.Wai
+import Network.Wai hiding (Request)
 import Network.Wai.Application.Static
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Handler.WebSockets (websocketsOr)
-import Network.WebSockets
+import Network.WebSockets hiding (Request, receiveData)
+import CubeState (cubeFromState)
 
-handle :: Connection -> IO ()
-handle conn = forever $ do
-  message <- receiveDataMessage conn
-  print (eitherDecode $ fromDataMessage message :: Either String ComputeRequest)
-  sendTextData conn $ ("Hello, " :: Text) <> fromDataMessage message <> "!"
-  return ()
+delaySecond :: Int -> IO ()
+delaySecond s = threadDelay $ s * 1000 * 1000
+
+handler :: Connection -> IO ()
+handler c = forever $ do
+  m <- receiveData
+  case m of
+    Left e -> sendError e
+    Right Cancel -> sendError "Nothing to cancel"
+    Right (Compute d) -> computeHandler d
+  where
+    sendData :: Text -> [Pair] -> IO ()
+    sendData s p = sendTextData c $ encode $ object $ ("status" .= s) : p
+
+    sendError :: Text -> IO ()
+    sendError e = sendData "error" ["error" .= e]
+
+    receiveData :: IO (Either Text Request)
+    receiveData = first fromString . eitherDecode . fromDataMessage <$> receiveDataMessage c
+
+    busyHandler = do
+      d <- receiveData
+      case d of
+        Right Cancel -> return ()
+        Right _ -> sendError "Process busy" >> busyHandler
+        Left e -> sendError e >> busyHandler
+
+    computeHandler d = do
+      print d
+      sendData "started" []
+      r <- busyHandler `race` solve d
+      case r of
+        Left _ -> sendData "canceled" []
+        Right cs -> sendData "finished" ["result" .= cubeFromState cs]
+      return ()
 
 socket :: ServerApp
 socket p = do
-  conn <- acceptRequest p
-  withPingThread conn 30 (return ()) $ handle conn
+  c <- acceptRequest p
+  withPingThread c 30 (return ()) $ handler c
 
 static :: Application
 static = staticApp $ defaultWebAppSettings "static"
