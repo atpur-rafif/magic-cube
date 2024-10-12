@@ -1,8 +1,11 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Compute (AlgorithmType (..), ComputeRequest) where
+module Compute (AlgorithmType (..), ComputeRequest, Request) where
 
 import Data.Aeson as JN
+import Data.Aeson.Types (Parser)
+import GHC.Generics (Generic)
 
 data AlgorithmType
   = HillClimbing
@@ -11,22 +14,18 @@ data AlgorithmType
   | HillClimbingRandomRestart
   | SimulatedAnnealing
   | GeneticAlgorithm
-  deriving (Show)
+  deriving (Show, Generic)
 
-instance FromJSON AlgorithmType where
-  parseJSON (JN.String "HillClimbing") = return HillClimbing
-  parseJSON (JN.String "HillClimbingWithSideway") = return HillClimbingWithSideway
-  parseJSON (JN.String "HillClimbingStochastic") = return HillClimbingStochastic
-  parseJSON (JN.String "HillClimbingRandomRestart") = return HillClimbingRandomRestart
-  parseJSON (JN.String "SimulatedAnnealing") = return SimulatedAnnealing
-  parseJSON (JN.String "GeneticAlgorithm") = return GeneticAlgorithm
-  parseJSON _ = fail "Invalid AlgorithmType"
+instance FromJSON AlgorithmType
 
 data ComputeRequest = ComputeRequest
   { sizeCR :: Int,
     cubeCR :: [[[Int]]],
     algorithmCR :: AlgorithmType
   }
+  deriving (Show)
+
+data Request = Compute ComputeRequest | Cancel
   deriving (Show)
 
 instance FromJSON ComputeRequest where
@@ -36,3 +35,13 @@ instance FromJSON ComputeRequest where
       <*> o .: "cube"
       <*> o .: "algorithm"
   parseJSON _ = fail "Invalid ComputeRequest"
+
+instance FromJSON Request where
+  parseJSON v@(Object o) = do
+    c <- o .:? "cancel" :: Parser (Maybe Bool)
+    let n = Compute <$> (parseJSON v :: Parser ComputeRequest)
+    case c of
+      Just True -> return Cancel
+      Just False -> n
+      Nothing -> n
+  parseJSON _ = fail "Invalid Request"
