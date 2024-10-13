@@ -1,29 +1,47 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-partial-fields #-}
 
-module Compute (AlgorithmType (..), ComputeRequest, Request (..), solve) where
+module Compute (AlgorithmAI (..), ComputeRequest, Request (..), solve) where
 
+import Algorithm
 import CubeState (CubeState, stateFromCube)
 import Data.Aeson as JN
 import Data.Aeson.Types (Parser)
-import GHC.Generics (Generic)
-import Algorithm
 
-data AlgorithmType
+data AlgorithmAI
   = HillClimbing
   | HillClimbingWithSideway
+      { maximumSideway :: Int
+      }
   | HillClimbingStochastic
+      { iterationStochastic :: Int
+      }
   | HillClimbingRandomRestart
+      { restartCount :: Int
+      }
   | SimulatedAnnealing
   | GeneticAlgorithm
-  deriving (Show, Generic)
+      { poolGenetic :: Int
+      }
+  deriving (Show)
 
-instance FromJSON AlgorithmType
+instance FromJSON AlgorithmAI where
+  parseJSON (Object o) = do
+    n <- o .: "type" :: Parser String
+    case n of
+      "HillClimbing" -> return HillClimbing
+      "HillClimbingWithSideway" -> HillClimbingWithSideway <$> o .: "maximum"
+      "HillClimbingStochastic" -> HillClimbingStochastic <$> o .: "iteration"
+      "HillClimbingRandomRestart" -> HillClimbingRandomRestart <$> o .: "count"
+      "SimulatedAnnealing" -> return SimulatedAnnealing
+      "GeneticAlgorithm" -> GeneticAlgorithm <$> o .: "pool"
+      _ -> fail "Unknown algorithm"
+  parseJSON _ = fail "Invalid algorithm"
 
 data ComputeRequest = ComputeRequest
   { sizeCR :: Int,
     cubeCR :: [[[Int]]],
-    algorithmCR :: AlgorithmType
+    algorithmCR :: AlgorithmAI
   }
   deriving (Show)
 
@@ -48,14 +66,14 @@ instance FromJSON Request where
       Nothing -> n
   parseJSON _ = fail "Invalid Request"
 
-solve :: ComputeRequest -> IO CubeState
+solve :: ComputeRequest -> IterationIO -> IO CubeState
 solve cr = f s
   where
     s = stateFromCube (sizeCR cr) (cubeCR cr)
     f = case algorithmCR cr of
       HillClimbing -> hillClimb
-      HillClimbingWithSideway -> hillClimbWithSideway 100
-      HillClimbingStochastic -> hillClimbStochastic 1000
-      HillClimbingRandomRestart -> hillClimbRandomRestart 5
+      HillClimbingWithSideway m -> hillClimbWithSideway m
+      HillClimbingStochastic i -> hillClimbStochastic i
+      HillClimbingRandomRestart r -> hillClimbRandomRestart r
       SimulatedAnnealing -> simulatedAnnealing $ exponentialBackoff 1.1 1e10
-      GeneticAlgorithm -> geneticAlgorithm 10 . replicate 10
+      GeneticAlgorithm p -> geneticAlgorithm p . replicate p

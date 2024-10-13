@@ -23,7 +23,7 @@ main = do
           ("Genetic Algorithm", geneticAlgorithm 10 . replicate 10)
         ]
   forM_ m $ \(n, a) -> do
-    (t, r) <- benchmark $ a s
+    (t, r) <- benchmark $ a s (const $ return ())
     printf "%s: %d (%dms)\n" n (getPoint r) (t `div` 1000000000)
     return ()
 

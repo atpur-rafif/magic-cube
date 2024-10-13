@@ -57,7 +57,10 @@ startButton.addEventListener("click", () => {
 		JSON.stringify({
 			cube,
 			size: 5,
-			algorithm: "HillClimbing",
+			algorithm: {
+				type: "HillClimbingStochastic",
+				iteration: 10_000_000,
+			},
 		}),
 	);
 });

@@ -3,7 +3,6 @@
 module Main (main) where
 
 import Compute
-import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (race)
 import Control.Monad (forever)
 import Data.Aeson
@@ -17,9 +16,6 @@ import Network.Wai.Handler.Warp (run)
 import Network.Wai.Handler.WebSockets (websocketsOr)
 import Network.WebSockets hiding (Request, receiveData)
 import CubeState (cubeFromState)
-
-delaySecond :: Int -> IO ()
-delaySecond s = threadDelay $ s * 1000 * 1000
 
 handler :: Connection -> IO ()
 handler c = forever $ do
@@ -48,7 +44,7 @@ handler c = forever $ do
     computeHandler d = do
       print d
       sendData "started" []
-      r <- busyHandler `race` solve d
+      r <- busyHandler `race` solve d (const $ return ())
       case r of
         Left _ -> sendData "canceled" []
         Right cs -> sendData "finished" ["result" .= cubeFromState cs]
