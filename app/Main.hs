@@ -2,20 +2,28 @@
 
 module Main (main) where
 
+import Algorithm
 import Compute
 import Control.Concurrent.Async (race)
 import Control.Monad (forever)
+import CubeState (cubeFromState)
 import Data.Aeson
 import Data.Aeson.Types (Pair)
 import Data.Bifunctor (Bifunctor (first))
 import Data.String (IsString (fromString))
 import Data.Text
+import GHC.MVar (MVar, newMVar, putMVar, takeMVar)
 import Network.Wai hiding (Request)
 import Network.Wai.Application.Static
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Handler.WebSockets (websocketsOr)
 import Network.WebSockets hiding (Request, receiveData)
-import CubeState (cubeFromState)
+import System.CPUTime (getCPUTime)
+
+data ResponseTiming = ResponseTiming
+  { nextTime :: Int,
+    deltaTime :: Int
+  }
 
 handler :: Connection -> IO ()
 handler c = forever $ do
@@ -41,10 +49,23 @@ handler c = forever $ do
         Right _ -> sendError "Process busy" >> busyHandler
         Left e -> sendError e >> busyHandler
 
+    stateUpdateHandler :: MVar ResponseTiming -> IterationIO
+    stateUpdateHandler m p = do
+      rt <- takeMVar m
+      ct <- fromInteger <$> getCPUTime
+      if ct < nextTime rt
+        then putMVar m rt
+        else do
+          sendData "update" p
+          putMVar m $ rt {nextTime = ct + deltaTime rt}
+
+    defaultTiming = 1000 * 1000 * 1000 * 100
     computeHandler d = do
       print d
       sendData "started" []
-      r <- busyHandler `race` solve d (const $ return ())
+      ct <- fromInteger <$> getCPUTime
+      m <- newMVar $ ResponseTiming (ct + defaultTiming) defaultTiming
+      r <- busyHandler `race` solve d (stateUpdateHandler m)
       case r of
         Left _ -> sendData "canceled" []
         Right cs -> sendData "finished" ["result" .= cubeFromState cs]

@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Algorithm
   ( hillClimb,
@@ -9,14 +10,14 @@ module Algorithm
     simulatedAnnealing,
     geneticAlgorithm,
     shuffleState,
-    IterationIO
+    IterationIO,
   )
 where
 
 import Control.Monad (forM)
 import qualified Control.Monad.Random as R
 import CubeState (CubeAI (isMagicCube), CubeState, GeneticAlgorithmAI (combineGenes), StateAI (generateNeighbor, generateRandomState, getPoint))
-import Data.Aeson.Types (Pair)
+import Data.Aeson.Types (Pair, (.=))
 import System.Random (randomIO, randomRIO)
 
 shuffleState :: (StateAI s) => Int -> s -> IO s
@@ -42,6 +43,7 @@ hillClimbWithSideway i s a = do
   let f 0 cs = return cs
       f ci cs = do
         ns <- pickRandom $ generateNeighbor cs
+        a ["point" .= getPoint ns]
         case getPoint ns `compare` getPoint cs of
           LT -> return s
           EQ -> f (ci - 1) ns
@@ -51,6 +53,7 @@ hillClimbWithSideway i s a = do
 hillClimbStochastic :: Int -> CubeState -> IterationIO -> IO CubeState
 hillClimbStochastic 0 s _ = return s
 hillClimbStochastic i s a = do
+  a ["point" .= getPoint s, "iteration" .= i]
   let f ns = hillClimbStochastic (i - 1) ns a
   n <- generateRandomState s
   if getPoint n > getPoint s then f n else f s
@@ -81,6 +84,7 @@ simulatedAnnealing t s a = do
   let (ct, nt) = runTemperatureSA t
       d = getPoint ns - getPoint s
       nsa = simulatedAnnealing nt ns a
+  a ["point" .= getPoint s, "temperature" .= ct]
   if
     | ct == 0 -> return s
     | d > 0 -> nsa

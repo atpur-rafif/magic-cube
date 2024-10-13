@@ -2,11 +2,11 @@
 
 module Main_old (main) where
 
+import Algorithm (exponentialBackoff, geneticAlgorithm, hillClimb, hillClimbRandomRestart, hillClimbStochastic, hillClimbWithSideway, shuffleState, simulatedAnnealing)
 import Control.Monad (forM_)
-import CubeState (CubeState, MatrixCube, StateAI (getPoint), stateFromCube)
+import CubeState (CubeState, MatrixCube, StateAI (getPoint), cubeFromState, stateFromCube)
 import System.CPUTime (getCPUTime)
 import Text.Printf (printf)
-import Algorithm (shuffleState,hillClimb, hillClimbWithSideway, hillClimbStochastic, hillClimbRandomRestart, simulatedAnnealing, geneticAlgorithm, exponentialBackoff)
 
 main :: IO ()
 main = do
@@ -16,15 +16,15 @@ main = do
 
   let m =
         [ ("Hill Climbing", hillClimb),
+          ("Sthocastic Hill Climbing", hillClimbStochastic 1000000),
           ("Hill Climbing with Sideways Move", hillClimbWithSideway 100),
-          ("Sthocastic Hill Climbing", hillClimbStochastic 1000),
           ("Hill Climbing Random Restart", hillClimbRandomRestart 5),
           ("Simulated Annealing", simulatedAnnealing (exponentialBackoff 1.01 1e10)),
           ("Genetic Algorithm", geneticAlgorithm 10 . replicate 10)
         ]
   forM_ m $ \(n, a) -> do
     (t, r) <- benchmark $ a s (const $ return ())
-    printf "%s: %d (%dms)\n" n (getPoint r) (t `div` 1000000000)
+    printf "%s: %d (%dms)\n" n (getPoint r) (t `div` (1000 * 1000 * 1000))
     return ()
 
 benchmark :: IO a -> IO (Integer, a)
