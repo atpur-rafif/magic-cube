@@ -5,10 +5,11 @@
 module Compute (AlgorithmAI (..), ComputeRequest, Request (..), solve) where
 
 import Algorithm
-import CubeState (CubeState, stateFromCube, getMagicNumber, Transformer(..))
+import CubeState (CubeState, Transformer (..), getMagicNumber, stateFromCube)
 import Data.Aeson as JN
 import Data.Aeson.Types (Parser)
 import GHC.Generics (Generic)
+import Control.Applicative (Alternative(empty, (<|>)))
 
 data AlgorithmAI
   = HillClimbing
@@ -30,7 +31,6 @@ data AlgorithmAI
 data TransformerAI = Digital | Analog deriving (Show, Generic)
 
 instance FromJSON TransformerAI
-
 instance FromJSON AlgorithmAI where
   parseJSON (Object o) = do
     n <- o .: "type" :: Parser String
@@ -52,7 +52,7 @@ data ComputeRequest = ComputeRequest
   }
   deriving (Show)
 
-data Request = Compute ComputeRequest | Cancel
+data Request = Compute ComputeRequest | Cancel | Timing Int
   deriving (Show)
 
 instance FromJSON ComputeRequest where
@@ -65,13 +65,20 @@ instance FromJSON ComputeRequest where
   parseJSON _ = fail "Invalid ComputeRequest"
 
 instance FromJSON Request where
-  parseJSON v@(Object o) = do
-    c <- o .:? "cancel" :: Parser (Maybe Bool)
-    let n = Compute <$> (parseJSON v :: Parser ComputeRequest)
-    case c of
-      Just True -> return Cancel
-      Just False -> n
-      Nothing -> n
+  parseJSON v@(Object o) = parseCancel <|> parseTiming <|> parseCompute
+    where
+      parseCancel = do
+        c <- o .:? "cancel" :: Parser (Maybe Bool)
+        case c of
+          Just True -> return Cancel
+          Just False -> empty
+          Nothing -> empty
+      parseTiming = do
+        t <- o .:? "timing" :: Parser (Maybe Int)
+        case t of
+          Just i -> return $ Timing i
+          Nothing -> empty
+      parseCompute = Compute <$> (parseJSON v :: Parser ComputeRequest)
   parseJSON _ = fail "Invalid Request"
 
 solve :: ComputeRequest -> IterationIO -> IO CubeState

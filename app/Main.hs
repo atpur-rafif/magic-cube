@@ -32,6 +32,7 @@ handler c = forever $ do
     Left e -> sendError e
     Right Cancel -> sendError "Nothing to cancel"
     Right (Compute d) -> computeHandler d
+    Right _ -> undefined
   where
     sendData :: Text -> [Pair] -> IO ()
     sendData s p = sendTextData c $ encode $ object $ ("status" .= s) : p
