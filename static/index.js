@@ -57,8 +57,9 @@ startButton.addEventListener("click", () => {
 		JSON.stringify({
 			cube,
 			size: 5,
+			transformer: "Analog",
 			algorithm: {
-				type: "HillClimbingStochastic",
+				type: "SimulatedAnnealing",
 				iteration: 1_000_000,
 			},
 		}),

@@ -1,12 +1,14 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 
 module Compute (AlgorithmAI (..), ComputeRequest, Request (..), solve) where
 
 import Algorithm
-import CubeState (CubeState, stateFromCube)
+import CubeState (CubeState, stateFromCube, getMagicNumber, Transformer(..))
 import Data.Aeson as JN
 import Data.Aeson.Types (Parser)
+import GHC.Generics (Generic)
 
 data AlgorithmAI
   = HillClimbing
@@ -25,6 +27,10 @@ data AlgorithmAI
       }
   deriving (Show)
 
+data TransformerAI = Digital | Analog deriving (Show, Generic)
+
+instance FromJSON TransformerAI
+
 instance FromJSON AlgorithmAI where
   parseJSON (Object o) = do
     n <- o .: "type" :: Parser String
@@ -41,6 +47,7 @@ instance FromJSON AlgorithmAI where
 data ComputeRequest = ComputeRequest
   { sizeCR :: Int,
     cubeCR :: [[[Int]]],
+    transformer :: TransformerAI,
     algorithmCR :: AlgorithmAI
   }
   deriving (Show)
@@ -53,6 +60,7 @@ instance FromJSON ComputeRequest where
     ComputeRequest
       <$> o .: "size"
       <*> o .: "cube"
+      <*> o .: "transformer"
       <*> o .: "algorithm"
   parseJSON _ = fail "Invalid ComputeRequest"
 
@@ -69,10 +77,15 @@ instance FromJSON Request where
 solve :: ComputeRequest -> IterationIO -> IO CubeState
 solve cr = f s
   where
-    s = stateFromCube (sizeCR cr) (cubeCR cr)
+    d = sizeCR cr
+    m = getMagicNumber d
+    t = case transformer cr of
+      Analog -> let g i = (-1) * abs (i - m) in g
+      Digital -> let g i = if i == m then 1 else 0 in g
+    s = stateFromCube d (Transformer t) (cubeCR cr)
     f = case algorithmCR cr of
       HillClimbing -> hillClimb
-      HillClimbingWithSideway m -> hillClimbWithSideway m
+      HillClimbingWithSideway a -> hillClimbWithSideway a
       HillClimbingStochastic i -> hillClimbStochastic i
       HillClimbingRandomRestart r -> hillClimbRandomRestart r
       SimulatedAnnealing -> simulatedAnnealing $ exponentialBackoff 1.1 1e10

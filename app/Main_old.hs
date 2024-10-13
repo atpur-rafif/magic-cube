@@ -69,4 +69,4 @@ solutionCube =
   ]
 
 solutionCubeState :: CubeState
-solutionCubeState = stateFromCube 5 solutionCube
+solutionCubeState = stateFromCube 5 undefined solutionCube

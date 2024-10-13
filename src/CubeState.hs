@@ -1,6 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module CubeState (stateFromCube, cubeFromState, MatrixCube, CubeState, StateAI (..), CubeAI (..), GeneticAlgorithmAI (..)) where
+module CubeState (stateFromCube, cubeFromState, getMagicNumber, MatrixCube, CubeState, StateAI (..), CubeAI (..), GeneticAlgorithmAI (..), Transformer(..)) where
 
 import Control.Monad (foldM)
 import Control.Monad.IO.Class (MonadIO)
@@ -13,6 +13,11 @@ import System.Random (randomIO, randomRIO)
 
 type MatrixCube = [[[Int]]]
 
+newtype Transformer = Transformer (Int -> Int)
+
+instance Show Transformer where
+  show = const "<function>"
+
 data CubeState = CubeState
   { size :: Int,
     targetPoint :: Int,
@@ -20,7 +25,8 @@ data CubeState = CubeState
     currentPoint :: Int,
     cube :: A.Array Point Int,
     relatedLine :: M.Map Point [Line],
-    memoizedSum :: M.Map Line Int
+    memoizedSum :: M.Map Line Int,
+    transformer :: Transformer
   }
   deriving (Show)
 
@@ -38,21 +44,24 @@ generateMemoizedSum ls c = M.fromList $ f <$> ls
   where
     f l = (l, runLine c l)
 
-stateFromCube :: Int -> MatrixCube -> CubeState
-stateFromCube s c =
+getMagicNumber :: Int -> Int
+getMagicNumber s = s * (s * s * s + 1) `div` 2
+
+stateFromCube :: Int -> Transformer -> MatrixCube -> CubeState
+stateFromCube s t@(Transformer t') c =
   CubeState
     { size = s,
       targetPoint = tp,
       targetSum = ts,
-      currentPoint = foldr f 0 ms,
+      currentPoint = sum $ t' <$> ms,
       cube = ar,
       relatedLine = generateRelatedLine ls,
-      memoizedSum = ms
+      memoizedSum = ms,
+      transformer = t
     }
   where
     ls = generateLines s
-    f v a = a + if v == ts then 1 else 0
-    ts = s * (s * s * s + 1) `div` 2
+    ts = getMagicNumber s
     tp = length ls
     ms = generateMemoizedSum ls ar
     m = s - 1
@@ -120,15 +129,14 @@ instance CubeAI CubeState where
     where
       v = cube s A.! p
       d = v' - v
+      Transformer t = transformer s
       rlm = f <$> relatedLine s M.! p
         where
           f l = (l, memoizedSum s M.! l)
       nrlm = f <$> rlm
         where
           f (a, b) = (a, b + d)
-      countPoint = foldr f 0
-        where
-          f (_, b) r = r + if b == targetSum s then 1 else 0
+      countPoint ps = sum $ t . snd <$> ps
       ns =
         s
           { memoizedSum = M.fromList nrlm <> memoizedSum s,
