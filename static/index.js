@@ -2,7 +2,25 @@ const root = document.getElementById("root");
 const display = document.createElement("div");
 const startButton = document.createElement("button");
 const cancelButton = document.createElement("button");
+const slider = document.createElement("input");
+const sliderDisplay = document.createElement("div");
 const ws = new WebSocket("ws://localhost:8080/");
+
+function setValue(value) {
+	slider.value = value;
+	sliderDisplay.innerText = `${value}ms`;
+	ws.send(
+		JSON.stringify({
+			timing: parseInt(value),
+		}),
+	);
+}
+slider.type = "range";
+slider.min = 10;
+slider.max = 10000;
+slider.addEventListener("input", (e) => {
+	setValue(e.target.value);
+});
 
 ws.addEventListener("message", (e) => {
 	display.insertAdjacentHTML("afterbegin", `${e.data}<br>`);
@@ -53,11 +71,12 @@ const cube = [
 
 startButton.innerText = "Start";
 startButton.addEventListener("click", () => {
+	setValue(100);
 	ws.send(
 		JSON.stringify({
 			cube,
 			size: 5,
-			transformer: "Analog",
+			transformer: "Digital",
 			algorithm: {
 				type: "SimulatedAnnealing",
 				iteration: 1_000_000,
@@ -66,4 +85,4 @@ startButton.addEventListener("click", () => {
 	);
 });
 
-root.append(startButton, cancelButton, display);
+root.append(startButton, cancelButton, slider, sliderDisplay, display);
