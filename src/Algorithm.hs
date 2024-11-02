@@ -1,13 +1,12 @@
 module Algorithm
-  ( shuffleState,
-    iterateIO,
+  ( iterateIO,
     pickRandom,
     IterationIO,
     Algorithm,
   )
 where
 
-import CubeState (StateAI (generateRandomState))
+import LocalSearch.State (State (generateRandomState))
 import Data.Aeson.Types (Pair)
 import System.Random (randomIO)
 
@@ -28,11 +27,5 @@ pickRandom xs = do
   let l = length xs
       i = n `mod` l
   return $ xs !! i
-
-shuffleState :: (StateAI s) => Int -> s -> IO s
-shuffleState 0 s = return s
-shuffleState i s = do
-  ns <- generateRandomState s
-  shuffleState (i - 1) ns
 
 type IterationIO = [Pair] -> IO ()

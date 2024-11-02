@@ -4,7 +4,7 @@ module Algorithm.SimulatedAnnealing where
 
 import Algorithm (Algorithm, iterateIO, pickRandom)
 import Control.Monad.Random (randomRIO)
-import CubeState (StateAI (generateNeighbor, getPoint))
+import LocalSearch.State (State (generateNeighbor, getPoint))
 
 newtype TemperatureSA = TemperatureSA
   { runTemperatureSA :: (Double, TemperatureSA)
@@ -25,7 +25,7 @@ data Parameter = Parameter
     function :: TemperatureFunction
   }
 
-run :: (StateAI s) => Algorithm Parameter () s
+run :: (State s) => Algorithm Parameter () s
 run a p s = snd <$> iterateIO (initialTemperature p, s) f
   where
     f (0, _) = return Nothing

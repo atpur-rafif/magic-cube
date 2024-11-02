@@ -5,7 +5,8 @@ module Algorithm.GeneticAlgorithm where
 import Algorithm (Algorithm, iterateIO)
 import Control.Monad (forM)
 import qualified Control.Monad.Random as R
-import CubeState (GeneticAlgorithmAI (combineGenes), StateAI (generateRandomState, getPoint))
+import LocalSearch.State (State (generateRandomState, getPoint))
+import LocalSearch.Genetic(Genetic(combineGenes))
 import System.Random (randomIO)
 
 data Parameter = Parameter
@@ -14,7 +15,7 @@ data Parameter = Parameter
   }
 
 -- TODO: Change replicate to random state
-run :: forall s. (StateAI s, GeneticAlgorithmAI s) => Algorithm Parameter () s
+run :: forall s. (State s, Genetic s) => Algorithm Parameter () s
 run a p s = g <$> iterateIO (maxIteration p, replicate (populationSize p) s) f
   where
     f (0, _) = return Nothing

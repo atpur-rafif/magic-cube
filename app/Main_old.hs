@@ -2,9 +2,8 @@
 
 module Main_old (main) where
 
-import CubeState (CubeState, MatrixCube, StateAI (getPoint), cubeFromState, stateFromCube)
+import CubeState (CubeState, MatrixCube, cubeFromState, stateFromCube)
 import System.CPUTime (getCPUTime)
-import Text.Printf (printf)
 
 main :: IO ()
 main = do

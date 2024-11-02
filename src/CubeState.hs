@@ -1,15 +1,16 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module CubeState (stateFromCube, cubeFromState, getMagicNumber, MatrixCube, CubeState, StateAI (..), CubeAI (..), GeneticAlgorithmAI (..), Transformer(..)) where
+module CubeState (stateFromCube, cubeFromState, getMagicNumber, MatrixCube, CubeState, CubeAI (..), Transformer(..)) where
 
 import Control.Monad (foldM)
-import Control.Monad.IO.Class (MonadIO)
 import Data.List (foldl')
 import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified GHC.Arr as A
 import Line (Line (..), Point (..), generateLines, lineToPoints)
 import System.Random (randomIO, randomRIO)
+import LocalSearch.Genetic(Genetic(..))
+import LocalSearch.State (State(..))
 
 type MatrixCube = [[[Int]]]
 
@@ -77,12 +78,6 @@ cubeFromState cs =
       a = cube cs
    in [[[a A.! Point (z, y, x) | x <- [0 .. m]] | y <- [0 .. m]] | z <- [0 .. m]]
 
-class StateAI s where
-  getPoint :: s -> Int
-  generateSuccessor :: s -> [s]
-  generateNeighbor :: s -> [s]
-  generateRandomState :: (MonadIO m) => s -> m s
-
 class CubeAI s where
   getValue :: s -> Point -> Int
   setValue :: s -> Point -> Int -> s
@@ -95,7 +90,7 @@ switchValue s p1 p2 =
       f (p, v) a = setValue a p v
    in foldr f s [(p1, v2), (p2, v1)]
 
-instance StateAI CubeState where
+instance State CubeState where
   getPoint = currentPoint
   generateSuccessor s = r
     where
@@ -145,10 +140,7 @@ instance CubeAI CubeState where
           }
   isMagicCube s = targetPoint s == currentPoint s
 
-class GeneticAlgorithmAI s where
-  combineGenes :: s -> s -> IO s
-
-instance GeneticAlgorithmAI CubeState where
+instance Genetic CubeState where
   combineGenes s1 s2 = do
     let z = zipWith f' (f s1) (f s2)
           where
