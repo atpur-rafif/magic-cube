@@ -38,6 +38,7 @@ library
     , async
     , base >=4.7 && <5
     , containers
+    , http-types
     , mtl
     , random
     , text
@@ -61,6 +62,7 @@ executable magic-cube-ai-exe
     , async
     , base >=4.7 && <5
     , containers
+    , http-types
     , magic-cube-ai
     , mtl
     , random

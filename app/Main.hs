@@ -20,6 +20,7 @@ import Network.Wai.Handler.Warp (run)
 import Network.Wai.Handler.WebSockets (websocketsOr)
 import Network.WebSockets hiding (Request, receiveData)
 import System.CPUTime (getCPUTime)
+import Network.HTTP.Types.Status
 
 data ResponseTiming = ResponseTiming
   { nextTime :: Int,
@@ -85,8 +86,18 @@ socket p = do
 static :: Application
 static = staticApp $ defaultWebAppSettings "static"
 
+fallback :: Application -> Application -> Application
+fallback appA appB req respond = appA req $ \res -> do
+  let code = statusCode . responseStatus $ res
+  if code < 300 then respond res
+  else appB req respond
+
+staticFile :: FilePath -> Application
+staticFile path _ respond = do
+  respond $  responseFile status200 [] path Nothing
+
 app :: Application
-app = websocketsOr defaultConnectionOptions socket static
+app = websocketsOr defaultConnectionOptions socket $ static `fallback` staticFile "static/index.html"
 
 main :: IO ()
 main = do
