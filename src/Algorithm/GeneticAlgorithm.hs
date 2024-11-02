@@ -5,7 +5,7 @@ module Algorithm.GeneticAlgorithm where
 import Algorithm (Algorithm, iterateIO)
 import Control.Monad (forM)
 import qualified Control.Monad.Random as R
-import LocalSearch.State (State (generateRandomState, getPoint))
+import LocalSearch.State (State (nextRandomState, getPoint))
 import LocalSearch.Genetic(Genetic(combineGenes))
 import System.Random (randomIO)
 
@@ -33,7 +33,7 @@ run a p s = g <$> iterateIO (maxIteration p, replicate (populationSize p) s) f
         m <- randomIO :: IO Bool
         c <- combineGenes p1 p2
         if m
-          then generateRandomState c
+          then nextRandomState c
           else return c
       return $ Just (i - 1, nss)
 

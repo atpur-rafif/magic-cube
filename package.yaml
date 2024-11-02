@@ -33,6 +33,7 @@ dependencies:
 - wai-websockets
 - wai-app-static
 - text
+- array
 - aeson
 - async
 - http-types

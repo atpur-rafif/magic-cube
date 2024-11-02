@@ -2,7 +2,7 @@
 module Algorithm.HillClimbWithSideway where
 
 import Algorithm (Algorithm, iterateIO, pickRandom)
-import LocalSearch.State (State (generateNeighbor, getPoint))
+import LocalSearch.State (State (neighbor, getPoint))
 
 newtype Parameter = Parameter
   { maxIteration :: Int
@@ -13,7 +13,7 @@ run a p s = snd <$> iterateIO (maxIteration p, s) f
   where f (0, _) = return Nothing
         f (ci, cs) = do
           a ()
-          ns <- pickRandom $ generateNeighbor cs
+          ns <- pickRandom $ neighbor cs
           case getPoint ns `compare` getPoint cs of
             LT -> return Nothing
             EQ -> return $ Just (ci - 1, ns)

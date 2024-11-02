@@ -4,7 +4,7 @@ module Algorithm.SimulatedAnnealing where
 
 import Algorithm (Algorithm, iterateIO, pickRandom)
 import Control.Monad.Random (randomRIO)
-import LocalSearch.State (State (generateNeighbor, getPoint))
+import LocalSearch.State (State (neighbor, getPoint))
 
 newtype TemperatureSA = TemperatureSA
   { runTemperatureSA :: (Double, TemperatureSA)
@@ -31,7 +31,7 @@ run a p s = snd <$> iterateIO (initialTemperature p, s) f
     f (0, _) = return Nothing
     f (ct, cs) = do
       a ()
-      ns <- pickRandom $ generateNeighbor s
+      ns <- pickRandom $ neighbor s
       let d = getPoint ns - getPoint cs
           nt = g ct
       if d > 0

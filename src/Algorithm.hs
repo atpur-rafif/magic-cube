@@ -6,7 +6,7 @@ module Algorithm
   )
 where
 
-import LocalSearch.State (State (generateRandomState))
+import LocalSearch.State (State (nextRandomState))
 import Data.Aeson.Types (Pair)
 import System.Random (randomIO)
 

@@ -2,7 +2,6 @@
 
 module Main_old (main) where
 
-import CubeState (CubeState, MatrixCube, cubeFromState, stateFromCube)
 import System.CPUTime (getCPUTime)
 
 main :: IO ()
@@ -16,7 +15,7 @@ benchmark a = do
   e <- getCPUTime
   return (e - s, r)
 
-solutionCube :: MatrixCube
+solutionCube :: [[[Int]]]
 solutionCube =
   [ [ [25, 16, 80, 104, 90],
       [115, 98, 4, 1, 97],
@@ -50,5 +49,5 @@ solutionCube =
     ]
   ]
 
-solutionCubeState :: CubeState
-solutionCubeState = stateFromCube 5 undefined solutionCube
+-- solutionCubeState :: CubeState
+-- solutionCubeState = stateFromCube 5 undefined solutionCube
