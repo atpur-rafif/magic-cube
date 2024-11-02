@@ -26,8 +26,15 @@ source-repository head
 library
   exposed-modules:
       Algorithm
+      Algorithm.GeneticAlgorithm
+      Algorithm.HillClimb
+      Algorithm.HillClimbRandomRestart
+      Algorithm.HillClimbStochastic
+      Algorithm.HillClimbWithSideway
+      Algorithm.SimulatedAnnealing
       Compute
       CubeState
+      Interface
       Line
   hs-source-dirs:
       src
@@ -53,6 +60,7 @@ executable magic-cube-ai-exe
   main-is: Main.hs
   other-modules:
       Main_old
+      Main_server
   hs-source-dirs:
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N

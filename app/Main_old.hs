@@ -2,30 +2,13 @@
 
 module Main_old (main) where
 
-import Algorithm (exponentialBackoff, geneticAlgorithm, hillClimb, hillClimbRandomRestart, hillClimbStochastic, hillClimbWithSideway, shuffleState, simulatedAnnealing)
-import Control.Monad (forM_)
 import CubeState (CubeState, MatrixCube, StateAI (getPoint), cubeFromState, stateFromCube)
 import System.CPUTime (getCPUTime)
 import Text.Printf (printf)
 
 main :: IO ()
 main = do
-  s <- shuffleState 20 solutionCubeState
-  putStr "Original point: "
-  print $ getPoint s
-
-  let m =
-        [ ("Hill Climbing", hillClimb),
-          ("Sthocastic Hill Climbing", hillClimbStochastic 1000000),
-          ("Hill Climbing with Sideways Move", hillClimbWithSideway 100),
-          ("Hill Climbing Random Restart", hillClimbRandomRestart 5),
-          ("Simulated Annealing", simulatedAnnealing (exponentialBackoff 1.01 1e10)),
-          ("Genetic Algorithm", geneticAlgorithm 10 . replicate 10)
-        ]
-  forM_ m $ \(n, a) -> do
-    (t, r) <- benchmark $ a s (const $ return ())
-    printf "%s: %d (%dms)\n" n (getPoint r) (t `div` (1000 * 1000 * 1000))
-    return ()
+  putStrLn "Hello, world!"
 
 benchmark :: IO a -> IO (Integer, a)
 benchmark a = do
