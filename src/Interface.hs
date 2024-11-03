@@ -22,7 +22,7 @@ data Algorithm
 
 data RunRequest = RunRequest
   { size :: Int,
-    matrix :: [[[Int]]],
+    -- matrix :: [[[Int]]],
     algorithm :: Algorithm
   } deriving (Show)
 
