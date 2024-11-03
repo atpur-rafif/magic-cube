@@ -1,4 +1,4 @@
-module MagicCube.MemoizedCube (CubeState(..), createCube) where
+module MagicCube.MemoizedCube (CubeState (..), createCube) where
 
 import Control.Monad (foldM)
 import Control.Monad.Random (randomRIO)
@@ -9,7 +9,7 @@ import qualified Data.Set as S
 import Line (Line, Point (Point), generateLines, lineToPoints)
 import LocalSearch.Genetic (Genetic (..))
 import LocalSearch.State (State (..))
-import MagicCube.Cube (Cube (..), IsCube (..), runTransformer, randomMatrix, createCube)
+import MagicCube.Cube (Cube (..), IsCube (..), createCube, randomMatrix, runTransformer, size, Configuration (transformer))
 import System.Random (randomIO)
 
 data CubeState = CubeState
@@ -25,7 +25,7 @@ instance State CubeState where
   getPoint = currentPoint
   successor s = r
     where
-      m = size (startCube s) - 1
+      m = (size . configuration . startCube $ s) - 1
       r = do
         p1@(Point (x1, y1, z1)) <- A.range (Point (0, 0, 0), Point (m, m, m))
         p2 <- A.range (Point (x1, y1, z1), Point (m, m, m))
@@ -42,7 +42,7 @@ instance State CubeState where
         GT -> [n]
 
   nextRandomState s = do
-    let m = size (startCube s) - 1
+    let m = (size . configuration . startCube $ s) - 1
     p1 <- randomRIO (Point (0, 0, 0), Point (m, m, m))
     p2 <- randomRIO (Point (0, 0, 0), Point (m, m, m))
     if p1 == p2
@@ -51,8 +51,9 @@ instance State CubeState where
 
   randomState s = do
     let c = startCube s
-    m <- randomMatrix (size c)
-    let nc = createCube m (transformer c)
+        cg = configuration c
+    m <- randomMatrix (size cg)
+    let nc = createCube m (transformer cg)
         ncs = fromCube nc
     return ncs
 
@@ -60,7 +61,7 @@ instance IsCube CubeState where
   fromCube c =
     CubeState
       { startCube = c,
-        currentPoint = sum $ runTransformer c <$> ms,
+        currentPoint = sum $ runTransformer cg <$> ms,
         currentCube = cube c,
         relatedLine =
           let f l = [(p, [l]) | p <- lineToPoints l]
@@ -68,7 +69,8 @@ instance IsCube CubeState where
         memoizedSum = ms
       }
     where
-      d = size c
+      cg = configuration c
+      d = size cg
       ls = generateLines d
       ms = M.fromList $ f <$> ls
         where
@@ -84,7 +86,7 @@ instance IsCube CubeState where
     where
       v = currentCube s A.! p
       d = v' - v
-      t = runTransformer (startCube s)
+      t = runTransformer . configuration . startCube $ s
       rlm = f <$> relatedLine s M.! p
         where
           f l = (l, memoizedSum s M.! l)

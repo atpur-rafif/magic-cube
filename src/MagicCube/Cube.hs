@@ -1,4 +1,4 @@
-module MagicCube.Cube (Cube (..), Transformer (..), runTransformer, createCube, IsCube (..), cubeToMatrix, basicMatrix, randomMatrix) where
+module MagicCube.Cube (Cube (..), Transformer (..), Configuration(..), runTransformer, createCube, IsCube (..), cubeToMatrix, basicMatrix, randomMatrix, createConfiguration) where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Array (listArray)
@@ -8,12 +8,17 @@ import System.Random.Shuffle (shuffleM)
 
 data Transformer = Digital | Analog deriving (Show)
 
-data Cube = Cube
+data Configuration = Configuration
   { size :: Int,
     magicNumber :: Int,
     globalMaximum :: Int,
-    cube :: A.Array Point Int,
     transformer :: Transformer
+  }
+  deriving (Show)
+
+data Cube = Cube
+  { configuration :: Configuration,
+    cube :: A.Array Point Int
   }
   deriving (Show)
 
@@ -37,7 +42,7 @@ arrayToMatrix s a = [[[a A.! Point (z, y, x) | x <- [0 .. d]] | y <- [0 .. d]] |
     d = s - 1
 
 cubeToMatrix :: Cube -> [[[Int]]]
-cubeToMatrix c = arrayToMatrix (size c) (cube c)
+cubeToMatrix c = arrayToMatrix (size $ configuration c) (cube c)
 
 basicMatrix :: Int -> [[[Int]]]
 basicMatrix s = arrayToMatrix s $ listArray (Point (0, 0, 0), Point (m, m, m)) [1 ..]
@@ -50,16 +55,22 @@ randomMatrix d = do
   let m = d - 1
   return $ arrayToMatrix d $ listArray (Point (0, 0, 0), Point (m, m, m)) s
 
-createCube :: [[[Int]]] -> Transformer -> Cube
-createCube c t =
-  Cube
+createConfiguration :: Int -> Transformer -> Configuration
+createConfiguration s t =
+  Configuration
     { size = s,
-      magicNumber = s * (s * s * s + 1) `div` 2,
       globalMaximum = case t of
         Digital -> 3 * s * s + 6 * s + 4
         Analog -> 0,
-      cube = ar,
+      magicNumber = s * (s * s * s + 1) `div` 2,
       transformer = t
+    }
+
+createCube :: [[[Int]]] -> Transformer -> Cube
+createCube c t =
+  Cube
+    { configuration = createConfiguration s t,
+      cube = ar
     }
   where
     m = s - 1
@@ -85,7 +96,7 @@ createCube c t =
         d3 :: [[[a]]] -> Bool
         d3 xs = d1 xs && all d2 xs
 
-runTransformer :: Cube -> Int -> Int
+runTransformer :: Configuration -> Int -> Int
 runTransformer c =
   let m = magicNumber c
    in case transformer c of
