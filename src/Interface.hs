@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Interface (Request (..), Response (..), Status (..), Algorithm(..)) where
+module Interface (Request (..), Response (..), Status (..), Algorithm(..), ComputeRequest(..)) where
 
 import qualified Algorithm.GeneticAlgorithm as GA
 import qualified Algorithm.HillClimb as HC
@@ -20,7 +20,7 @@ data Algorithm
   | GeneticAlgorithm GA.Parameter
   deriving (Show)
 
-data RunRequest = RunRequest
+data ComputeRequest = ComputeRequest
   { size :: Int,
     -- matrix :: [[[Int]]],
     algorithm :: Algorithm
@@ -31,7 +31,7 @@ data Request = Request
   { force :: Maybe Bool,
     updateTimespan :: Maybe Int,
     iterationTimespan :: Maybe Int,
-    run :: Maybe RunRequest
+    run :: Maybe ComputeRequest
   }
 
 data Response = Response
@@ -42,7 +42,7 @@ data Response = Response
 data Status = Ok | Error deriving (Show)
 
 $(deriveJSON encodeOptions ''Algorithm)
-$(deriveJSON encodeOptions ''RunRequest)
+$(deriveJSON encodeOptions ''ComputeRequest)
 $(deriveJSON encodeOptions ''Request)
 
 $(deriveJSON encodeOptions ''Status)

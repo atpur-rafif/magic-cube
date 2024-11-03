@@ -11,7 +11,7 @@ import Util (encodeOptions)
 data Parameter = Parameter {} deriving (Show)
 $(deriveJSON encodeOptions ''Parameter)
 
-run :: (State s) => Algorithm () () s
+run :: (State s) => Algorithm Parameter () s
 run a _ = HCWS.run na (HCWS.Parameter 1)
   where 
         na _ = a ()

@@ -1,4 +1,4 @@
-module MagicCube.MemoizedCube (CubeState (..), createCube) where
+module MagicCube.MemoizedCube (MemoizedCubeState (..), createCube) where
 
 import Control.Monad (foldM)
 import Control.Monad.Random (randomRIO)
@@ -13,7 +13,7 @@ import MagicCube.Cube (Configuration (transformer), Cube (Cube, cube), IsCube (.
 import qualified MagicCube.Cube as C
 import System.Random (randomIO)
 
-data CubeState = CubeState
+data MemoizedCubeState = CubeState
   { configuration :: Configuration,
     relatedLine :: M.Map Point [Line],
     currentPoint :: Int,
@@ -22,7 +22,7 @@ data CubeState = CubeState
   }
   deriving (Show)
 
-instance State CubeState where
+instance State MemoizedCubeState where
   getPoint = currentPoint
   successor s = r
     where
@@ -57,7 +57,7 @@ instance State CubeState where
         ncs = fromCube nc
     return ncs
 
-instance IsCube CubeState where
+instance IsCube MemoizedCubeState where
   fromCube c =
     CubeState
       { configuration = cg,
@@ -98,7 +98,7 @@ instance IsCube CubeState where
             currentPoint = currentPoint s + countPoint nrlm - countPoint rlm
           }
 
-instance Genetic CubeState where
+instance Genetic MemoizedCubeState where
   combineGenes s1 s2 = do
     let z = zipWith f' (f s1) (f s2)
           where

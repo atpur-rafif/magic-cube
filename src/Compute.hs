@@ -1,98 +1,29 @@
-module Compute where
+module Compute(compute) where
 
---
--- module Compute (AlgorithmAI (..), ComputeRequest, Request (..), solve) where
---
--- import Algorithm
--- import CubeState (CubeState, Transformer (..), getMagicNumber, stateFromCube)
--- import Data.Aeson as JN
--- import Data.Aeson.Types (Parser)
--- import GHC.Generics (Generic)
--- import Control.Applicative (Alternative(empty, (<|>)))
---
--- data AlgorithmAI
---   = HillClimbing
---   | HillClimbingWithSideway
---       { maximumSideway :: Int
---       }
---   | HillClimbingStochastic
---       { iterationStochastic :: Int
---       }
---   | HillClimbingRandomRestart
---       { restartCount :: Int
---       }
---   | SimulatedAnnealing
---   | GeneticAlgorithm
---       { poolGenetic :: Int
---       }
---   deriving (Show)
---
--- data TransformerAI = Digital | Analog deriving (Show, Generic)
---
--- instance FromJSON TransformerAI
--- instance FromJSON AlgorithmAI where
---   parseJSON (Object o) = do
---     n <- o .: "type" :: Parser String
---     case n of
---       "HillClimbing" -> return HillClimbing
---       "HillClimbingWithSideway" -> HillClimbingWithSideway <$> o .: "maximum"
---       "HillClimbingStochastic" -> HillClimbingStochastic <$> o .: "iteration"
---       "HillClimbingRandomRestart" -> HillClimbingRandomRestart <$> o .: "count"
---       "SimulatedAnnealing" -> return SimulatedAnnealing
---       "GeneticAlgorithm" -> GeneticAlgorithm <$> o .: "pool"
---       _ -> fail "Unknown algorithm"
---   parseJSON _ = fail "Invalid algorithm"
---
--- data ComputeRequest = ComputeRequest
---   { sizeCR :: Int,
---     cubeCR :: [[[Int]]],
---     transformer :: TransformerAI,
---     algorithmCR :: AlgorithmAI
---   }
---   deriving (Show)
---
--- data Request = Compute ComputeRequest | Cancel | Timing Int
---   deriving (Show)
---
--- instance FromJSON ComputeRequest where
---   parseJSON (Object o) =
---     ComputeRequest
---       <$> o .: "size"
---       <*> o .: "cube"
---       <*> o .: "transformer"
---       <*> o .: "algorithm"
---   parseJSON _ = fail "Invalid ComputeRequest"
---
--- instance FromJSON Request where
---   parseJSON v@(Object o) = parseCancel <|> parseTiming <|> parseCompute
---     where
---       parseCancel = do
---         c <- o .:? "cancel" :: Parser (Maybe Bool)
---         case c of
---           Just True -> return Cancel
---           Just False -> empty
---           Nothing -> empty
---       parseTiming = do
---         t <- o .:? "timing" :: Parser (Maybe Int)
---         case t of
---           Just i -> return $ Timing i
---           Nothing -> empty
---       parseCompute = Compute <$> (parseJSON v :: Parser ComputeRequest)
---   parseJSON _ = fail "Invalid Request"
---
--- solve :: ComputeRequest -> IterationIO -> IO CubeState
--- solve cr = f s
---   where
---     d = sizeCR cr
---     m = getMagicNumber d
---     t = case transformer cr of
---       Analog -> let g i = (-1) * abs (i - m) in g
---       Digital -> let g i = if i == m then 1 else 0 in g
---     s = stateFromCube d (Transformer t) (cubeCR cr)
---     f = case algorithmCR cr of
---       HillClimbing -> hillClimb
---       HillClimbingWithSideway a -> hillClimbWithSideway a
---       HillClimbingStochastic i -> hillClimbStochastic i
---       HillClimbingRandomRestart r -> hillClimbRandomRestart r
---       SimulatedAnnealing -> simulatedAnnealing $ exponentialBackoff 1.1 1e10
---       GeneticAlgorithm p -> geneticAlgorithm p . replicate p
+import qualified Algorithm.GeneticAlgorithm as GA
+import qualified Algorithm.HillClimb as HC
+import qualified Algorithm.HillClimbRandomRestart as HCR
+import qualified Algorithm.HillClimbStochastic as HCS
+import qualified Algorithm.HillClimbWithSideway as HCWS
+import qualified Algorithm.SimulatedAnnealing as SA
+import Data.Aeson (ToJSON (toJSON), Value)
+import Interface (Algorithm (..), ComputeRequest (..))
+import LocalSearch.Genetic (Genetic)
+import LocalSearch.State (State)
+
+compute :: (State s, Genetic s) => (Value -> IO ()) -> ComputeRequest -> s -> IO s
+compute a cr s =
+  let na :: (ToJSON v) => (v -> IO ())
+      na m = let v = toJSON m in a v
+
+      -- ra: runnable action
+      -- p: parameter
+      -- ist: initial state
+      runner ist ra = case algorithm cr of
+        HillClimb p -> HC.run ra p ist
+        HillClimbRandomRestart p -> HCR.run ra p ist
+        HillClimbStochastic p -> HCS.run ra p ist
+        HillClimbWithSideway p -> HCWS.run ra p ist
+        GeneticAlgorithm p -> GA.run ra p ist
+        SimulatedAnnealing p -> SA.run ra p ist
+   in runner s na
