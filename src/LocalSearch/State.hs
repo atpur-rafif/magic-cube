@@ -7,12 +7,12 @@ class State s where
   successor :: s -> [s]
   neighbor :: s -> [s]
 
+  -- Need configuration from previous state
+  randomState :: (MonadIO m) => s -> m s
   nextRandomState :: (MonadIO m) => s -> m s
 
-  shuffle :: Int -> s -> IO s
-  shuffle 0 s = return s
-  shuffle i s = do
+  shuffleState :: Int -> s -> IO s
+  shuffleState 0 s = return s
+  shuffleState i s = do
     ns <- nextRandomState s
-    shuffle (i - 1) ns
-
-
+    shuffleState (i - 1) ns

@@ -37,6 +37,7 @@ dependencies:
 - aeson
 - async
 - http-types
+- random-shuffle
 
 ghc-options:
 - -Wall

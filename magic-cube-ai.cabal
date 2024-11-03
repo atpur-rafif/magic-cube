@@ -52,6 +52,7 @@ library
     , http-types
     , mtl
     , random
+    , random-shuffle
     , text
     , wai
     , wai-app-static
@@ -79,6 +80,7 @@ executable magic-cube-ai-exe
     , magic-cube-ai
     , mtl
     , random
+    , random-shuffle
     , text
     , wai
     , wai-app-static

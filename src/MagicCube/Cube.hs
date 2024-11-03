@@ -1,7 +1,10 @@
-module MagicCube.Cube (Cube (..), Transformer (..), runTransformer, createCube, IsCube (..), matrixFromCube) where
+module MagicCube.Cube (Cube (..), Transformer (..), runTransformer, createCube, IsCube (..), cubeToMatrix, basicMatrix, randomMatrix) where
 
-import Line (Point (Point))
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import Data.Array (listArray)
 import qualified Data.Array as A
+import Line (Point (Point))
+import System.Random.Shuffle (shuffleM)
 
 data Transformer = Digital | Analog deriving (Show)
 
@@ -11,7 +14,8 @@ data Cube = Cube
     globalMaximum :: Int,
     cube :: A.Array Point Int,
     transformer :: Transformer
-  } deriving (Show)
+  }
+  deriving (Show)
 
 class IsCube s where
   fromCube :: Cube -> s
@@ -27,9 +31,24 @@ class IsCube s where
         f (p, v) a = setValue a p v
      in foldr f s [(p1, v2), (p2, v1)]
 
-matrixFromCube :: Cube -> [[[Int]]]
-matrixFromCube c = [[[cube c A.! Point (z, y, x) | x <- [0 .. d]] | y <- [0 .. d]] | z <- [0 .. d]]
-  where d = size c - 1
+arrayToMatrix :: Int -> A.Array Point Int -> [[[Int]]]
+arrayToMatrix s a = [[[a A.! Point (z, y, x) | x <- [0 .. d]] | y <- [0 .. d]] | z <- [0 .. d]]
+  where
+    d = s - 1
+
+cubeToMatrix :: Cube -> [[[Int]]]
+cubeToMatrix c = arrayToMatrix (size c) (cube c)
+
+basicMatrix :: Int -> [[[Int]]]
+basicMatrix s = arrayToMatrix s $ listArray (Point (0, 0, 0), Point (m, m, m)) [1 ..]
+  where
+    m = s - 1
+
+randomMatrix :: (MonadIO m) => Int -> m [[[Int]]]
+randomMatrix d = do
+  s <- liftIO (shuffleM [1 .. (d * d * d)] :: IO [Int])
+  let m = d - 1
+  return $ arrayToMatrix d $ listArray (Point (0, 0, 0), Point (m, m, m)) s
 
 createCube :: [[[Int]]] -> Transformer -> Cube
 createCube c t =
@@ -65,7 +84,6 @@ createCube c t =
 
         d3 :: [[[a]]] -> Bool
         d3 xs = d1 xs && all d2 xs
-
 
 runTransformer :: Cube -> Int -> Int
 runTransformer c =

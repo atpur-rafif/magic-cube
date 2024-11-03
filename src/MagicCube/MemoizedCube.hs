@@ -1,4 +1,4 @@
-module MagicCube.MemoizedCube () where
+module MagicCube.MemoizedCube (CubeState(..), createCube) where
 
 import Control.Monad (foldM)
 import Control.Monad.Random (randomRIO)
@@ -9,7 +9,7 @@ import qualified Data.Set as S
 import Line (Line, Point (Point), generateLines, lineToPoints)
 import LocalSearch.Genetic (Genetic (..))
 import LocalSearch.State (State (..))
-import MagicCube.Cube (Cube (..), IsCube (..), runTransformer)
+import MagicCube.Cube (Cube (..), IsCube (..), runTransformer, randomMatrix, createCube)
 import System.Random (randomIO)
 
 data CubeState = CubeState
@@ -48,6 +48,13 @@ instance State CubeState where
     if p1 == p2
       then nextRandomState s
       else return $ switchValue s p1 p2
+
+  randomState s = do
+    let c = startCube s
+    m <- randomMatrix (size c)
+    let nc = createCube m (transformer c)
+        ncs = fromCube nc
+    return ncs
 
 instance IsCube CubeState where
   fromCube c =
