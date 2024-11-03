@@ -1,5 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Algorithm.GeneticAlgorithm where
 
@@ -7,14 +9,19 @@ import Algorithm (Algorithm, iterateIO)
 import Control.Monad (forM)
 import qualified Control.Monad.Random as R
 import LocalSearch.Genetic (Genetic (combineGenes))
+import Data.Aeson.TH (deriveJSON)
 import LocalSearch.State (State (getPoint, nextRandomState, randomState))
 import System.Random (randomIO)
 import Control.Monad.Random (replicateM)
+import GHC.Generics (Generic)
+import Util (encodeOptions)
 
 data Parameter = Parameter
   { maxIteration :: Int,
     populationSize :: Int
-  }
+  } deriving (Show, Generic)
+
+$(deriveJSON encodeOptions ''Parameter)
 
 run :: forall s. (State s, Genetic s) => Algorithm Parameter () s
 run a p s = do

@@ -39,6 +39,7 @@ library
       LocalSearch.State
       MagicCube.Cube
       MagicCube.MemoizedCube
+      Util
   hs-source-dirs:
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints

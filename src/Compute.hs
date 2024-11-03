@@ -1,7 +1,5 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Wno-partial-fields #-}
-module Compute () where
+module Compute where
+
 --
 -- module Compute (AlgorithmAI (..), ComputeRequest, Request (..), solve) where
 --

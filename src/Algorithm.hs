@@ -1,13 +1,13 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Algorithm
   ( iterateIO,
     pickRandom,
-    IterationIO,
-    Algorithm,
+    Algorithm
   )
 where
 
-import LocalSearch.State (State (nextRandomState))
-import Data.Aeson.Types (Pair)
+
 import System.Random (randomIO)
 
 -- Type: State -> Parameter -> Data
@@ -27,5 +27,3 @@ pickRandom xs = do
   let l = length xs
       i = n `mod` l
   return $ xs !! i
-
-type IterationIO = [Pair] -> IO ()

@@ -1,29 +1,34 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
+
 module Algorithm.SimulatedAnnealing where
 
 import Algorithm (Algorithm, iterateIO, pickRandom)
 import Control.Monad.Random (randomRIO)
-import LocalSearch.State (State (neighbor, getPoint))
+import Data.Aeson.TH (deriveJSON)
+import GHC.Generics (Generic)
+import LocalSearch.State (State (getPoint, neighbor))
+import Util (encodeOptions)
 
-newtype TemperatureSA = TemperatureSA
-  { runTemperatureSA :: (Double, TemperatureSA)
-  }
-
-newtype Exponential = Exponential {
-  divisor :: Double
-}
-
-newtype Linear = Linear {
-  subtractor :: Double
-}
-
-data TemperatureFunction = ExponentialTF Exponential | LinearTF Linear
+data TemperatureFunction
+  = Exponential
+      { divisor :: Double
+      }
+  | Linear
+      { subtractor :: Double
+      }
+  deriving (Show, Generic)
 
 data Parameter = Parameter
   { initialTemperature :: Double,
     function :: TemperatureFunction
   }
+  deriving (Show)
+
+$(deriveJSON encodeOptions ''TemperatureFunction)
+$(deriveJSON encodeOptions ''Parameter)
 
 run :: (State s) => Algorithm Parameter () s
 run a p s = snd <$> iterateIO (initialTemperature p, s) f
@@ -45,5 +50,5 @@ run a p s = snd <$> iterateIO (initialTemperature p, s) f
 
     g :: Double -> Double
     g t = case function p of
-      ExponentialTF (Exponential d) -> if t < 1e-5 then 0 else d / t
-      LinearTF (Linear m) -> t - m
+      Exponential d -> if t < 1e-5 then 0 else d / t
+      Linear m -> t - m
