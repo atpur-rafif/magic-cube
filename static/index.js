@@ -18,6 +18,7 @@ const plotGA = document.createElement("div");
 const stuckCount = document.createElement("p");
 const maxIterate = document.createElement("p");
 const population = document.createElement("p");
+const scrollContainer = document.createElement("div");
 const ws = new WebSocket(`ws${document.location.protocol === "https:" ? "s" : ""}://${document.location.host}`);
 let cube = [];
 
@@ -110,6 +111,7 @@ function setAlgorithm(algorithm) {
 
 plotProbability.id = "probability"
 plotGA.id = "plotga";
+scrollContainer.className = "scrollable";
 
 let val = [];
 let iteration = [];
@@ -131,6 +133,7 @@ ws.addEventListener("message", (e) => {
 		cube = jsonData.data;
 		fillCells(initCells, cube);
 	}
+
 	iteration = Array.from({ length: count }, (_, i) => i + 1)
 	if (jsonData.status == "Finish") {
 		detail.replaceChildren();
@@ -151,8 +154,9 @@ ws.addEventListener("message", (e) => {
 			for (let i = 0; i < iterationPerRestart.length; i++) {
 				const iterRestart = document.createElement("p")
 				iterRestart.textContent = `Restart Iterasi ${i+1}: ${iterationPerRestart[i]} iterasi`
-				detail.appendChild(iterRestart);
+				scrollContainer.appendChild(iterRestart);
 			}
+			detail.appendChild(scrollContainer);
 		}
 
 		if (algorithm == "SimulatedAnnealing") {
@@ -178,14 +182,15 @@ ws.addEventListener("message", (e) => {
 			detail.appendChild(plotGA);
 			let countIter = Array.from({ length: iterCount }, (_, i) => i + 1);  
 			createPlot(countIter, avg, "Iteration", "Max and Average Point", "plotga", "Max and Average Plot", true, maxPoint);
-
 		}
+		$("start-button").disabled = false;
 	} 
 	
 	if (jsonData.status == "Update") {
 		val.push(jsonData.data.point);
 		count = jsonData.data.iteration;
 		currentValue = jsonData.data.point;
+		createPlot(Array.from({ length: count }, (_, i) => i + 1), val, "Iteration", "Objective Function", "plot", "Objective Function Plot", false, []);
 		if (algorithm == "HillClimbRandomRestart") {
 			if (iterationPerRestart.length <= jsonData.data.data.restartCount) {
 				iterationPerRestart.push(iterCount);
@@ -203,16 +208,23 @@ ws.addEventListener("message", (e) => {
 			avg.push(jsonData.data.data.pointAverage);
 			maxPoint.push(jsonData.data.point);
 			iterCount = jsonData.data.iteration;
-			
 		}
 	}
 });
 
 function send() {
+	$("start-button").disabled = true;
+	detail.replaceChildren();
 	clearCells(resultCells);
 	duration.textContent = "Duration: -";
 	lastValue.textContent = "Current Value: -"
 	Plotly.purge("plot");
+	if (document.getElementById("plotga")) {
+		Plotly.purge("plot");
+	}
+	if (document.getElementById("probability")) {
+		Plotly.purge("probability");
+	}
 	let inputArr = {};	
 	let parameter = document.getElementById("algorithm-parameter");
 	let inputTag = parameter.getElementsByTagName("input");

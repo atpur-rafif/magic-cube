@@ -28,3 +28,10 @@
     width: 40px;
     height: 40px;
   }
+
+.scrollable {
+    width: 300px;        /* Optional: set width */
+    height: 200px;       /* Set height to limit the viewable area */
+    overflow-y: auto;    /* Allows vertical scrolling */
+    border: 1px solid #ccc; /* Optional: for visual boundaries */
+}
