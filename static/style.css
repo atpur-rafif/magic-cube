@@ -1,0 +1,33 @@
+/* Gaya untuk kontainer utama */
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  /* Gaya untuk setiap layer grid 5x5 */
+  .layer {
+    display: grid;
+    grid-template-columns: repeat(5, 40px);
+    grid-template-rows: repeat(5, 40px);
+    gap: 5px;
+    border: 2px solid #333;
+    padding: 10px;
+    width: fit-content;
+  }
+
+  /* Gaya untuk setiap kotak angka */
+  .cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e0e0e0;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    border: 1px solid #999;
+    width: 40px;
+    height: 40px;
+  }
