@@ -11,7 +11,7 @@ Program ini dibuat untuk menyelesaikan persoalan Magic Cube. Persoalan ini mengi
 
 
 ## How to Run 
-Pastikan sudah menginstall stack pada komputer, lalu jalankan perintah berikut.
+Pastikan sudah menginstall stack (haskell) pada komputer, lalu jalankan perintah berikut.
 ```bash
 stack run
 ```
