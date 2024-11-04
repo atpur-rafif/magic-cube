@@ -4,13 +4,17 @@
 module Server (app) where
 
 import Compute (compute)
-import Control.Monad (forever, when, forM_)
+import Control.Concurrent (newEmptyMVar, newMVar, putMVar, tryTakeMVar)
+import Control.Monad (forM_, forever, when)
 import Data.Aeson (ToJSON (toJSON), Value, eitherDecode, encode, object, (.=))
 import Data.Bifunctor (Bifunctor (first))
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.String (IsString (fromString))
 import Data.Text (Text)
-import Interface (ComputeRequest (size), Request (Request, run, force))
+import GHC.Conc (ThreadId (ThreadId), forkIO, killThread)
+import GHC.IORef (IORef (IORef))
+import GHC.MVar (MVar (MVar))
+import Interface (ComputeRequest (size), Request (Request, force, run))
 import LocalSearch.State (State (getPoint))
 import MagicCube.Cube (IsCube (toCube), Transformer (..), createCube, cubeToMatrix, fromCube, randomMatrix)
 import MagicCube.MemoizedCube (MemoizedCubeState)
@@ -30,10 +34,6 @@ import Network.WebSockets
   )
 import Network.WebSockets.Connection (acceptRequest)
 import System.CPUTime (getCPUTime)
-import GHC.IORef (IORef(IORef))
-import GHC.Conc (ThreadId(ThreadId), forkIO, killThread)
-import Control.Concurrent (newMVar, newEmptyMVar, putMVar, tryTakeMVar)
-import GHC.MVar (MVar(MVar))
 
 initState :: Int -> IO MemoizedCubeState
 initState s = do
@@ -54,9 +54,25 @@ data ResponseStatus = Start | Update | Finish | Error deriving (Show)
 handler :: Connection -> IO ()
 handler c = do
   threadId <- newEmptyMVar :: IO (MVar ThreadId)
+  let serveRequest :: ComputeRequest -> IO ()
+      serveRequest r = do
+        print r
+        logger <- createLogger sendUpdate :: IO ((MemoizedCubeState, Value) -> IO ())
+
+        s <- initState $ size r
+        let m = cubeToMatrix $ toCube s
+        sendData Start $ toJSON m
+
+        t <- getCPUTime
+        s' <- compute logger r s
+        t' <- getCPUTime
+        let m' = cubeToMatrix $ toCube s'
+        sendData Finish $ object ["matrix" .= m', "duration" .= (t' - t)]
+        _ <- tryTakeMVar threadId
+
+        return ()
   forever $ do
     m <- receiveData
-    print m
     case m of
       Left e -> sendData Error $ toJSON e
       Right (Request {run, force}) -> do
@@ -78,23 +94,6 @@ handler c = do
 
     sendUpdate :: Value -> IO ()
     sendUpdate = sendData Update
-
-    serveRequest :: ComputeRequest -> IO ()
-    serveRequest r = do
-      print r
-      logger <- createLogger sendUpdate :: IO ((MemoizedCubeState, Value) -> IO ())
-
-      s <- initState $ size r
-      let m = cubeToMatrix $ toCube s
-      sendData Start $ toJSON m
-
-      t <- getCPUTime
-      s' <- compute logger r s
-      t' <- getCPUTime
-      let m' = cubeToMatrix $ toCube s'
-      sendData Finish $ object ["matrix" .= m', "duration" .= (t' - t)]
-
-      return ()
 
 socket :: ServerApp
 socket p = do
