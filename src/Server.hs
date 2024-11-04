@@ -71,13 +71,13 @@ handler c = forever $ do
       print r
       logger <- createLogger sendUpdate :: IO ((MemoizedCubeState, Value) -> IO ())
 
-      t <- getCPUTime
       s <- initState $ size r
       let m = cubeToMatrix $ toCube s
       sendData Start $ toJSON m
 
-      t' <- getCPUTime
+      t <- getCPUTime
       s' <- compute logger r s
+      t' <- getCPUTime
       let m' = cubeToMatrix $ toCube s'
       sendData Finish $ object ["matrix" .= m', "duration" .= (t' - t)]
 
