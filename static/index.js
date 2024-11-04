@@ -123,6 +123,21 @@ let probability = [];
 let countStuck = 0;
 let avg = [];
 let maxPoint = [];
+
+function clearVar() {
+	val = [];
+	iteration = [];
+	count = 0;
+	currentValue = 0;
+	iterationPerRestart = [];
+	iterCount = 0;
+	resCount = 0;
+	probability = [];
+	countStuck = 0;
+	avg = [];
+	maxPoint = [];
+}
+
 ws.addEventListener("message", (e) => {
 	console.log(e.data);
 	const algorithm = document.getElementById("algorithm").value;
@@ -132,12 +147,11 @@ ws.addEventListener("message", (e) => {
 		cube = jsonData.data;
 		fillCells(initCells, cube);
 	}
-	iteration = Array.from({ length: count }, (_, i) => i + 1);
+	iteration = Array.from({ length: count+1 }, (_, i) => i);
 	if (jsonData.status == "Finish") {
 		detail.replaceChildren();
 		cube = jsonData.data.matrix;
 		fillCells(resultCells, cube);
-		console.log(count);
 		createPlot(
 			iteration,
 			val,
@@ -203,7 +217,7 @@ ws.addEventListener("message", (e) => {
 			detail.appendChild(population);
 			detail.appendChild(maxIterate);
 			detail.appendChild(plotGA);
-			let countIter = Array.from({ length: iterCount }, (_, i) => i + 1);
+			let countIter = Array.from({ length: iterCount }, (_, i) => i);
 			createPlot(
 				countIter,
 				avg,
@@ -216,6 +230,7 @@ ws.addEventListener("message", (e) => {
 			);
 		}
 		$("start-button").disabled = false;
+		clearVar();
 	} 
 	
 	if (jsonData.status == "Update") {
@@ -382,7 +397,7 @@ function fillCells(cells, currCube) {
 	});
 }
 
-const arr = Array.from({ length: 125 }, (_, i) => i + 1);
+const arr = Array.from({ length: 125 }, (_, i) => i);
 const initCells = [];
 
 initHeader.textContent = "Initial State";
@@ -438,6 +453,7 @@ $("stop-button").addEventListener("click", () => {
 			force: true,
 		}),
 	);
+	$("start-button").disabled = false;
 });
 
 $("algorithm").addEventListener("change", (e) => {
