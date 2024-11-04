@@ -20,4 +20,6 @@ stack run
 |Nama           | NIM |
 |---------------|----------------| 
 | Muhammad Atpur Rafif| 13522086 |
+| Muhamad Rafli Rasyiidin | 13522088 |
+| M. Hanief Fatkhan Nashrullah | 13522100 |
 | Indraswara Galih Jayanegara | 13522119 |
