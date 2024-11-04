@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Interface (Request (..), Response (..), Status (..), Algorithm(..), ComputeRequest(..)) where
+module Interface (Request (..), Algorithm(..), ComputeRequest(..)) where
 
 import qualified Algorithm.GeneticAlgorithm as GA
 import qualified Algorithm.HillClimb as HC
@@ -34,16 +34,6 @@ data Request = Request
     run :: Maybe ComputeRequest
   } deriving (Show)
 
-data Response = Response
-  { status :: Status,
-    message :: String
-  }
-
-data Status = Ok | Error deriving (Show)
-
 $(deriveJSON encodeOptions ''Algorithm)
 $(deriveJSON encodeOptions ''ComputeRequest)
 $(deriveJSON encodeOptions ''Request)
-
-$(deriveJSON encodeOptions ''Status)
-$(deriveJSON encodeOptions ''Response)

@@ -84,14 +84,14 @@ function setAlgorithm(algorithm) {
 }
 
 ws.addEventListener("message", (e) => {
-	console.log(e);
+	console.log(e.data);
 });
 
 function send() {
 	ws.send(
 		JSON.stringify({
 			run: {
-				size: 10,
+				size: 5,
 				algorithm: {
 					type: "HillClimb",
 					properties: {},
