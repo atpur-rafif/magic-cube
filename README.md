@@ -11,13 +11,19 @@ Program ini dibuat untuk menyelesaikan persoalan Magic Cube. Persoalan ini mengi
 
 
 ## How to Run 
-Pastikan sudah menginstall stack pada komputer, lalu jalankan perintah berikut.
+Pastikan sudah menginstall stack (haskell) pada komputer, lalu jalankan perintah berikut.
 ```bash
 stack run
+```
+Kemudian buka browser dan masuk ke laman
+```
+localhost:8080/index.html
 ```
 
 ## Contributor 
 |Nama           | NIM |
 |---------------|----------------| 
 | Muhammad Atpur Rafif| 13522086 |
+| Muhamad Rafli Rasyiidin | 13522088 |
+| M. Hanief Fatkhan Nashrullah | 13522100 |
 | Indraswara Galih Jayanegara | 13522119 |
