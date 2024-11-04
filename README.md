@@ -15,6 +15,10 @@ Pastikan sudah menginstall stack (haskell) pada komputer, lalu jalankan perintah
 ```bash
 stack run
 ```
+Kemudian buka browser dan masuk ke laman
+```
+localhost:8080/index.html
+```
 
 ## Contributor 
 |Nama           | NIM |
