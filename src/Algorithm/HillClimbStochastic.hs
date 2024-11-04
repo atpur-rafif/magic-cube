@@ -19,6 +19,6 @@ run :: (State s) => Algorithm Parameter () s
 run a p s = snd <$> iterateIO (maxIteration p, s) f
   where f (0, _) = return Nothing
         f (ci, cs) = do
-          a ()
+          a (cs, ())
           ns <- nextRandomState cs
           return $ Just (ci - 1, if getPoint ns > getPoint cs then ns else cs)

@@ -29,7 +29,7 @@ run a p s = do
   let f :: (Int, [s]) -> IO (Maybe (Int, [s]))
       f (0, _) = return Nothing
       f (i, ss) = do
-        a ()
+        a (s, ())
         let ssw = if all ((0 ==) . snd) l then fe <$> l else l
               where
                 l = ft <$> ss

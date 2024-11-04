@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
 
-module Main_old () where
+module Main_old (main) where
 
 import System.CPUTime (getCPUTime)
 
--- main :: IO ()
--- main = do
---   putStrLn "Hello, world!"
+main :: IO ()
+main = do
+  putStrLn "Hello, world!"
 
 benchmark :: IO a -> IO (Integer, a)
 benchmark a = do

@@ -1,4 +1,5 @@
-module Compute(compute) where
+{-# LANGUAGE ScopedTypeVariables #-}
+module Compute (compute) where
 
 import qualified Algorithm.GeneticAlgorithm as GA
 import qualified Algorithm.HillClimb as HC
@@ -11,10 +12,10 @@ import Interface (Algorithm (..), ComputeRequest (..))
 import LocalSearch.Genetic (Genetic)
 import LocalSearch.State (State)
 
-compute :: (State s, Genetic s) => (Value -> IO ()) -> ComputeRequest -> s -> IO s
+compute :: forall s. ((State s, Genetic s) => ((s, Value) -> IO ()) -> ComputeRequest -> s -> IO s)
 compute a cr s =
-  let na :: (ToJSON v) => (v -> IO ())
-      na m = let v = toJSON m in a v
+  let na :: (ToJSON v) => (s, v) -> IO ()
+      na (ds, d) = let v = toJSON d in a (ds, v)
 
       -- ra: runnable action
       -- p: parameter

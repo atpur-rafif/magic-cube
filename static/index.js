@@ -1,88 +1,153 @@
+// Sedang capek dan tidak ingin menulis mutasi
+
 const root = document.getElementById("root");
-const display = document.createElement("div");
-const startButton = document.createElement("button");
-const cancelButton = document.createElement("button");
-const slider = document.createElement("input");
-const sliderDisplay = document.createElement("div");
 const ws = new WebSocket("ws://localhost:8080/");
 
-function setValue(value) {
-	slider.value = value;
-	sliderDisplay.innerText = `${value}ms`;
-	ws.send(
-		JSON.stringify({
-			timing: parseInt(value),
-		}),
-	);
+function $(id) {
+	return document.getElementById(id);
 }
-slider.type = "range";
-slider.min = 10;
-slider.max = 10000;
-slider.addEventListener("input", (e) => {
-	setValue(e.target.value);
-});
+
+function createInput(config) {
+	if (config.type === "number")
+		return `
+    <div>
+      <label>${config.label}</label>
+      <input type="${config.type}" value="${config.value}" name="${config.name}" />
+    </div>
+  `;
+
+	if (config.type === "option")
+		return `
+    <div>
+        <label>${config.label}</label>
+        <select id="${config.id}" name="">
+          ${config.option.map((v) => `<option value="${v.value}">${v.label}</option>`)}
+        </select>
+    </div>
+  `;
+}
+
+function setAlgorithm(algorithm) {
+	$("algorithm").value = algorithm;
+
+	let input = "";
+	if (algorithm === "HillClimb") {
+		input = "";
+	} else if (algorithm === "HillClimbWithSideway") {
+		input = `
+      ${createInput({
+				type: "number",
+				label: "Maximum Iteration",
+				name: "maxIteration",
+				value: 100,
+			})}
+    `;
+	} else if (algorithm === "HillClimbRandomRestart") {
+		input = `
+      ${createInput({
+				type: "number",
+				label: "Maximum Restart",
+				name: "maxIteration",
+				value: 30,
+			})}
+    `;
+	} else if (algorithm === "HillClimbStochastic") {
+		input = `
+      ${createInput({
+				type: "number",
+				label: "Iteration",
+				name: "iteration",
+				value: 100_000,
+			})}
+    `;
+	} else if (algorithm === "SimulatedAnnealing") {
+		input = `
+      ${createInput({
+				type: "number",
+				label: "Initial Temperature",
+				name: "initialTemperature",
+				value: 1_000_000,
+			})}
+    `;
+	} else if (algorithm === "GeneticAlgorithm") {
+		input = `
+      ${createInput({
+				type: "number",
+				label: "Population size",
+				name: "populationSize",
+				value: 10,
+			})}
+    `;
+	}
+
+	$("algorithm-parameter").innerHTML = input;
+}
 
 ws.addEventListener("message", (e) => {
-	display.insertAdjacentHTML("afterbegin", `${e.data}<br>`);
+	console.log(e);
 });
 
-cancelButton.innerText = "Cancel";
-cancelButton.addEventListener("click", () => {
-	ws.send(JSON.stringify({ cancel: true }));
-});
-
-const cube = [
-	[
-		[69, 107, 97, 60, 5],
-		[115, 19, 2, 120, 100],
-		[18, 65, 61, 105, 89],
-		[29, 36, 16, 85, 84],
-		[37, 34, 48, 43, 102],
-	],
-	[
-		[11, 111, 53, 70, 3],
-		[123, 62, 38, 39, 114],
-		[81, 78, 86, 50, 1],
-		[72, 15, 98, 96, 46],
-		[75, 28, 116, 125, 35],
-	],
-	[
-		[52, 106, 63, 109, 76],
-		[10, 73, 12, 27, 40],
-		[25, 95, 77, 31, 58],
-		[110, 94, 23, 118, 83],
-		[59, 82, 91, 21, 14],
-	],
-	[
-		[90, 68, 42, 17, 92],
-		[41, 108, 6, 64, 93],
-		[51, 7, 44, 13, 22],
-		[122, 80, 47, 117, 55],
-		[71, 124, 49, 57, 121],
-	],
-	[
-		[4, 79, 54, 24, 9],
-		[112, 87, 88, 74, 33],
-		[30, 101, 26, 45, 113],
-		[99, 56, 20, 103, 66],
-		[32, 8, 119, 104, 67],
-	],
-];
-
-startButton.innerText = "Start";
-startButton.addEventListener("click", () => {
-	setValue(100);
+function send() {
 	ws.send(
 		JSON.stringify({
-			cube,
-			size: 5,
-			transformer: "Digital",
-			algorithm: {
-				type: "SimulatedAnnealing",
-				iteration: 1_000_000,
+			run: {
+				size: 10,
+				algorithm: {
+					type: "HillClimb",
+					properties: {},
+				},
 			},
 		}),
 	);
-});
+}
 
-root.append(startButton, cancelButton, slider, sliderDisplay, display);
+root.innerHTML = `
+<div>
+  <button id="start-button">Start</button>
+  <button id="stop-button">Stop</button>
+  ${createInput({
+		type: "option",
+		label: "Algorithm: ",
+		id: "algorithm",
+		option: [
+			{
+				label: "Hill Climbing",
+				value: "HillClimb",
+			},
+			{
+				label: "Hill Climbing with Sideway",
+				value: "HillClimbWithSideway",
+			},
+			{
+				label: "Hill Climbing Random Restart",
+				value: "HillClimbRandomRestart",
+			},
+			{
+				label: "Hill Climbing Stochastic",
+				value: "HillClimbStochastic",
+			},
+			{
+				label: "Simulated Annealing",
+				value: "SimulatedAnnealing",
+			},
+			{
+				label: "Genetic Algorithm",
+				value: "GeneticAlgorithm",
+			},
+		],
+	})}
+</div>
+<div id="algorithm-parameter" style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem;">
+  <div>
+    <label>Test</label>
+    <input type="number" value=10></input>
+  </div>
+  
+</div>
+`;
+
+$("start-button").addEventListener("click", send);
+$("algorithm").addEventListener("change", (e) => {
+	setAlgorithm(e.target.value);
+});
+setAlgorithm("HillClimbRandomRestart");

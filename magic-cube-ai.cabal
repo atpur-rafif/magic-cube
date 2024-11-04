@@ -39,6 +39,7 @@ library
       LocalSearch.State
       MagicCube.Cube
       MagicCube.MemoizedCube
+      Server
       Util
   hs-source-dirs:
       src

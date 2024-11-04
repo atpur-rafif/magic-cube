@@ -32,7 +32,7 @@ data Request = Request
     updateTimespan :: Maybe Int,
     iterationTimespan :: Maybe Int,
     run :: Maybe ComputeRequest
-  }
+  } deriving (Show)
 
 data Response = Response
   { status :: Status,

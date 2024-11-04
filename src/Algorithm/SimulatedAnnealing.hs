@@ -35,7 +35,7 @@ run a p s = snd <$> iterateIO (initialTemperature p, s) f
   where
     f (0, _) = return Nothing
     f (ct, cs) = do
-      a ()
+      a (s, ())
       ns <- pickRandom $ neighbor s
       let d = getPoint ns - getPoint cs
           nt = g ct

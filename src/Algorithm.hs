@@ -12,7 +12,7 @@ import System.Random (randomIO)
 
 -- Type: State -> Parameter -> Data
 -- Function: Parameter -> State -> Caller IO -> State
-type Algorithm p d s = (d -> IO ()) -> p -> s -> IO s
+type Algorithm p d s = ((s, d) -> IO ()) -> p -> s -> IO s
 
 iterateIO :: s -> (s -> IO (Maybe s)) -> IO s
 iterateIO s f = do
