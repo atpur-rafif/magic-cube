@@ -18,7 +18,7 @@ const plotGA = document.createElement("div");
 const stuckCount = document.createElement("p");
 const maxIterate = document.createElement("p");
 const population = document.createElement("p");
-const ws = new WebSocket("ws://localhost:8080/");
+const ws = new WebSocket(`ws${document.location.protocol === "https:" ? "s" : ""}://${document.location.host}`);
 let cube = [];
 
 function $(id) {
