@@ -4,13 +4,13 @@
 module Server (app) where
 
 import Compute (compute)
-import Control.Monad (forever)
+import Control.Monad (forever, when, forM_)
 import Data.Aeson (ToJSON (toJSON), Value, eitherDecode, encode, object, (.=))
 import Data.Bifunctor (Bifunctor (first))
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.String (IsString (fromString))
 import Data.Text (Text)
-import Interface (ComputeRequest (size), Request (Request, run))
+import Interface (ComputeRequest (size), Request (Request, run, force))
 import LocalSearch.State (State (getPoint))
 import MagicCube.Cube (IsCube (toCube), Transformer (..), createCube, cubeToMatrix, fromCube, randomMatrix)
 import MagicCube.MemoizedCube (MemoizedCubeState)
@@ -30,6 +30,10 @@ import Network.WebSockets
   )
 import Network.WebSockets.Connection (acceptRequest)
 import System.CPUTime (getCPUTime)
+import GHC.IORef (IORef(IORef))
+import GHC.Conc (ThreadId(ThreadId), forkIO, killThread)
+import Control.Concurrent (newMVar, newEmptyMVar, putMVar, tryTakeMVar)
+import GHC.MVar (MVar(MVar))
 
 initState :: Int -> IO MemoizedCubeState
 initState s = do
@@ -48,14 +52,23 @@ createLogger a = do
 data ResponseStatus = Start | Update | Finish | Error deriving (Show)
 
 handler :: Connection -> IO ()
-handler c = forever $ do
-  m <- receiveData
-  print m
-  case m of
-    Left e -> sendData Error $ toJSON e
-    Right (Request {run}) -> case run of
-      Nothing -> sendData Error "Compute request undefined"
-      Just r -> serveRequest r
+handler c = do
+  threadId <- newEmptyMVar :: IO (MVar ThreadId)
+  forever $ do
+    m <- receiveData
+    print m
+    case m of
+      Left e -> sendData Error $ toJSON e
+      Right (Request {run, force}) -> do
+        when (force == Just True) $ do
+          i <- tryTakeMVar threadId
+          forM_ i killThread
+        case run of
+          Nothing -> sendData Error "Compute request undefined"
+          Just r -> do
+            i <- forkIO $ serveRequest r
+            putMVar threadId i
+            return ()
   where
     receiveData :: IO (Either Text Request)
     receiveData = first fromString . eitherDecode . fromDataMessage <$> receiveDataMessage c
