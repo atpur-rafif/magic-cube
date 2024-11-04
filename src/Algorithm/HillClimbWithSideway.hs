@@ -19,7 +19,7 @@ run :: (State s) => Algorithm Parameter () s
 run a p s = snd <$> iterateIO (maxIteration p, s) f
   where f (0, _) = return Nothing
         f (ci, cs) = do
-          a (s, ())
+          a (cs, ())
           ns <- pickRandom $ neighbor cs
           case getPoint ns `compare` getPoint cs of
             LT -> return Nothing

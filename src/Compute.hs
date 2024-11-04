@@ -16,15 +16,11 @@ compute :: forall s. ((State s, Genetic s) => ((s, Value) -> IO ()) -> ComputeRe
 compute a cr s =
   let na :: (ToJSON v) => (s, v) -> IO ()
       na (ds, d) = let v = toJSON d in a (ds, v)
-
-      -- ra: runnable action
-      -- p: parameter
-      -- ist: initial state
-      runner ist ra = case algorithm cr of
-        HillClimb p -> HC.run ra p ist
-        HillClimbRandomRestart p -> HCR.run ra p ist
-        HillClimbStochastic p -> HCS.run ra p ist
-        HillClimbWithSideway p -> HCWS.run ra p ist
-        GeneticAlgorithm p -> GA.run ra p ist
-        SimulatedAnnealing p -> SA.run ra p ist
-   in runner s na
+      runner = case algorithm cr of
+        HillClimb p -> HC.run na p s
+        HillClimbRandomRestart p -> HCR.run na p s
+        HillClimbStochastic p -> HCS.run na p s
+        HillClimbWithSideway p -> HCWS.run na p s
+        GeneticAlgorithm p -> GA.run na p s
+        SimulatedAnnealing p -> SA.run na p s
+   in runner

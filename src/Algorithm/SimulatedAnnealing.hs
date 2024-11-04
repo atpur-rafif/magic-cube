@@ -5,11 +5,11 @@
 
 module Algorithm.SimulatedAnnealing where
 
-import Algorithm (Algorithm, iterateIO, pickRandom)
+import Algorithm (Algorithm, iterateIO)
 import Control.Monad.Random (randomRIO)
 import Data.Aeson.TH (deriveJSON)
 import GHC.Generics (Generic)
-import LocalSearch.State (State (getPoint, neighbor))
+import LocalSearch.State (State (getPoint, nextRandomState))
 import Util (encodeOptions)
 
 data TemperatureFunction
@@ -30,25 +30,41 @@ data Parameter = Parameter
 $(deriveJSON encodeOptions ''TemperatureFunction)
 $(deriveJSON encodeOptions ''Parameter)
 
-run :: (State s) => Algorithm Parameter () s
-run a p s = snd <$> iterateIO (initialTemperature p, s) f
+data Data = Data
+  { temperature :: Double,
+    probabilityThreshold :: Double,
+    stuckCount :: Int
+  }
+$(deriveJSON encodeOptions ''Data)
+
+run :: (State s) => Algorithm Parameter Data s
+run a p s = snd <$> iterateIO (sd, s) f
   where
-    f (0, _) = return Nothing
-    f (ct, cs) = do
-      a (s, ())
-      ns <- pickRandom $ neighbor s
-      let d = getPoint ns - getPoint cs
+    sd =
+      Data
+        { temperature = initialTemperature p,
+          probabilityThreshold = 0,
+          stuckCount = 0
+        }
+    f (Data 0 _ _, _) = return Nothing
+    f (d, cs) = do
+      ns <- nextRandomState cs
+      let de = getPoint ns - getPoint cs
+          ct = temperature d
+          pv = exp $ (fromIntegral de :: Double) / ct
           nt = g ct
-      if d > 0
-        then return $ Just (nt, ns)
+          nd = d {probabilityThreshold = pv, temperature = nt}
+      a (cs, nd)
+      if de > 0
+        then return $ Just (nd, ns)
         else do
-          let pv = exp $ (fromIntegral d :: Double) / ct
           r <- randomRIO (0, 1) :: IO Double
+          let nnd = nd {stuckCount = stuckCount nd + 1}
           if r < pv
-            then return $ Just (nt, ns)
-            else return Nothing
+            then return $ Just (nnd, ns)
+            else return $ Just (nnd, cs)
 
     g :: Double -> Double
     g t = case function p of
-      Exponential d -> if t < 1e-5 then 0 else d / t
+      Exponential d -> if t < 1e-10 then 0 else t / d
       Linear m -> t - m

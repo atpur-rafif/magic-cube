@@ -9,7 +9,7 @@ import qualified Data.Set as S
 import Line (Line, Point (Point), generateLines, lineToPoints)
 import LocalSearch.Genetic (Genetic (..))
 import LocalSearch.State (State (..))
-import MagicCube.Cube (Configuration (transformer), Cube (Cube, cube), IsCube (..), createCube, randomMatrix, runTransformer, size)
+import MagicCube.Cube (Configuration (transformer, globalMaximum), Cube (Cube, cube), IsCube (..), createCube, randomMatrix, runTransformer, size)
 import qualified MagicCube.Cube as C
 import System.Random (randomIO)
 
@@ -56,6 +56,8 @@ instance State MemoizedCubeState where
     let nc = createCube m (transformer cg)
         ncs = fromCube nc
     return ncs
+
+  isGlobalMaxima s = getPoint s == globalMaximum (configuration s)
 
 instance IsCube MemoizedCubeState where
   fromCube c =
